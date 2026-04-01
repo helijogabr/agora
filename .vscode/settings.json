@@ -14,5 +14,6 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.biome": "explicit"
   },
+  "git.autofetch": "all",
   "typescript.tsdk": "node_modules/typescript/lib",
 }
