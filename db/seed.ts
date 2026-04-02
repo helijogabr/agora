@@ -14,7 +14,7 @@ export default async function seed() {
 
   await db.insert(Todo).values({
     title: "Buy groceries",
-    user: 1,
+    user: 1
   });
 
   await db.insert(Todo).values({

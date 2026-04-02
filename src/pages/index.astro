@@ -2,14 +2,22 @@
 import TodoHandler from "@components/TodoHandler.astro";
 import Layout from "@layouts/Layout.astro";
 
+console.log(await Astro.session?.entries());
+
 if (!(await Astro.session?.get("userId"))) {
-  return Astro.redirect("/login");
+  const returnTo = Astro.url.pathname.trim();
+
+  if (returnTo && returnTo !== "/" && returnTo !== "/login") {
+    return Astro.redirect(`/login?return=${encodeURIComponent(returnTo)}`);
+  } else {
+    return Astro.redirect("/login");
+  }
 }
 ---
 
 <Layout>
   <!-- fully center -->
-  <main class="flex flex-col items-center justify-center min-h-screen">
+  <main class="flex min-h-screen flex-col items-center justify-center">
     <TodoHandler server:defer />
   </main>
 </Layout>

@@ -5,7 +5,13 @@ import TodoList from "@components/Todo.tsx";
 const user = await Astro.session?.get("userId");
 
 if (!user) {
-  return Astro.redirect("/login");
+  const returnTo = Astro.url.pathname.trim();
+
+  if (returnTo && returnTo !== "/" && returnTo !== "/login") {
+    return Astro.redirect(`/login?return=${encodeURIComponent(returnTo)}`);
+  } else {
+    return Astro.redirect("/login");
+  }
 }
 
 const todos = await db.select().from(Todo).where(eq(Todo.user, user)).all();

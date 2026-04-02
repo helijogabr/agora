@@ -52,7 +52,7 @@ export const loginForm = defineAction({
     username: z.string(),
     password: z.string(),
   }),
-  handler: async (input, { session }) => {
+  handler: async (input, { session, url }) => {
     const { username, password } = input;
 
     if (!session) {
@@ -87,7 +87,10 @@ export const loginForm = defineAction({
         ttl: 1000 * 60 * 60 * 24, // 1 day
       });
 
-      return { success: true };
+      return {
+        success: true,
+        redirect: url.searchParams.get("return") || undefined,
+      };
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
@@ -102,7 +105,11 @@ export const loginForm = defineAction({
     session?.set("userId", user.id, {
       ttl: 1000 * 60 * 60 * 24, // 1 day
     });
-    return { success: true };
+
+    return {
+      success: true,
+      redirect: url.searchParams.get("return") || undefined,
+    };
   },
 });
 

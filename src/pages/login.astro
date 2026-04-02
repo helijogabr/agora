@@ -5,9 +5,7 @@ import Layout from "../layouts/Layout.astro";
 const result = Astro.getActionResult(actions.loginForm);
 
 if (result && !result.error) {
-  console.log("Login successful, redirecting to home page...");
-  console.log("User ID:", await Astro.session?.get("userId"));
-  return Astro.redirect("/");
+  return Astro.redirect(result.data.redirect || "/");
 }
 ---
 
