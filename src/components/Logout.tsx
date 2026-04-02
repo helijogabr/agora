@@ -14,10 +14,9 @@ export default function Logout() {
     <button
       type="button"
       onClick={logout}
-      className="cursor-pointer rounded border border-gray-300 px-2 py-1 text-sm font-medium text-gray-7000"
+      className="text-gray-7000 cursor-pointer rounded border border-gray-300 px-2 py-1 text-sm font-medium"
     >
       Logout
     </button>
-  )
+  );
 }
-

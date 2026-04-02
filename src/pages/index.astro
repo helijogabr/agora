@@ -19,7 +19,7 @@ if (!(await Astro.session?.get("userId"))) {
 <Layout>
   <!-- fully center -->
   <main class="flex min-h-screen flex-col items-center justify-center">
-    <TodoHandler server:defer />
+    <TodoHandler />
     <Logout client:idle />
   </main>
 </Layout>

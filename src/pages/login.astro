@@ -14,15 +14,27 @@ if (result && !result.error) {
     <form method="POST" action={actions.loginForm} class="flex flex-col gap-2">
       <label>
         Username:
-        <input type="text" name="username" required class="rounded border border-gray-300" />
+        <input
+          type="text"
+          name="username"
+          required
+          class="rounded border border-gray-300"
+        />
       </label>
       <br />
       <label>
         Password:
-        <input type="password" name="password" required class="rounded border border-gray-300" />
+        <input
+          type="password"
+          name="password"
+          required
+          class="rounded border border-gray-300"
+        />
       </label>
       <br />
-      <button type="submit" class="rounded border border-gray-300 bg-gray-200">Login</button>
+      <button type="submit" class="rounded border border-gray-300 bg-gray-200"
+        >Login</button
+      >
     </form>
 
     <div>

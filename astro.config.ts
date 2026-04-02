@@ -14,7 +14,11 @@ export default defineConfig({
   },
   site: "https://todo-astro.vercel.app",
   output: "server",
-  adapter: vercel(),
+  adapter: vercel({
+    isr: {
+      exclude: [/^\/api\/.+/, /^\/_actions\/.+/],
+    },
+  }),
   session: {
     driver: dbDriver(),
   },

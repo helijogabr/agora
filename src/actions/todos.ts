@@ -133,8 +133,8 @@ export const changeTodo = defineAction({
       .where(and(eq(Todo.id, id), eq(Todo.user, user)));
 
     return { success: res.rowsAffected === 1 };
-  }
-})
+  },
+});
 
 export const deleteTodo = defineAction({
   input: z.object({

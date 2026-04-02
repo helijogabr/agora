@@ -12,4 +12,4 @@ export const GET: APIRoute = () => {
   const sitemapUrl = new URL("sitemap-index.xml", import.meta.env.SITE);
 
   return new Response(`${txt} ${sitemapUrl.href}\n`);
-}
+};
