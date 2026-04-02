@@ -1,4 +1,5 @@
 ---
+import Logout from "@components/Logout.tsx";
 import TodoHandler from "@components/TodoHandler.astro";
 import Layout from "@layouts/Layout.astro";
 
@@ -19,5 +20,6 @@ if (!(await Astro.session?.get("userId"))) {
   <!-- fully center -->
   <main class="flex min-h-screen flex-col items-center justify-center">
     <TodoHandler server:defer />
+    <Logout client:idle />
   </main>
 </Layout>

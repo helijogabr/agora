@@ -1,4 +1,4 @@
-import { column, defineDb, defineTable, sql } from "astro:db";
+import { column, defineDb, defineTable } from "astro:db";
 
 const User = defineTable({
   columns: {
@@ -27,14 +27,6 @@ const Session = defineTable({
     value: column.text({
       optional: true
     }),
-    createdAt: column.number({
-      name: "created_at",
-      default: sql`CURRENT_TIMESTAMP`
-    }),
-    updatedAt: column.number({
-      name: "updated_at",
-      default: sql`CURRENT_TIMESTAMP`
-    })
   },
 });
 

@@ -1,4 +1,4 @@
-import { db, eq, Session, sql } from "astro:db";
+import { db, eq, Session } from "astro:db";
 import type { SessionDriver } from "astro";
 
 export default function (_: unknown): SessionDriver {
@@ -19,19 +19,10 @@ export default function (_: unknown): SessionDriver {
       return session.value;
     },
     async setItem(key, value) {
-      await db
-        .insert(Session)
-        .values({
-          key,
-          value,
-        })
-        .onConflictDoUpdate({
-          target: Session.key,
-          set: {
-            value,
-            updatedAt: sql`CURRENT_TIMESTAMP`,
-          },
-        });
+      await db.insert(Session).values({
+        key,
+        value,
+      });
     },
     async removeItem(key) {
       await db.delete(Session).where(eq(Session.key, key));

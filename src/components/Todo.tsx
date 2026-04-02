@@ -1,10 +1,11 @@
 import { actions } from "astro:actions";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import debounce from "lodash/debounce";
 import type {
   ErrorInferenceObject,
   SafeResult,
 } from "node_modules/astro/dist/actions/runtime/types";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { queryClient } from "@/query_client";
 
 type ActionFunc<T, I> = (i: I) => Promise<SafeResult<ErrorInferenceObject, T>>;
@@ -85,6 +86,53 @@ export default function Todo({
 
         if (ghost) {
           queryClient.setQueryData(["todos"], onMutateResult.previousTodoList);
+        }
+
+        queryClient.invalidateQueries({ queryKey: ["todos"] });
+      },
+    },
+    queryClient,
+  );
+
+  const modifyTodo = useMutation(
+    {
+      mutationFn: (input: { id: number; title: string }) =>
+        actionAdapter(actions.changeTodo)(input),
+      onMutate: async (input) => {
+        await queryClient.cancelQueries({ queryKey: ["todos"] });
+
+        const { id, title } = input;
+
+        queryClient.setQueryData(
+          ["todos"],
+          todoList.map((t) =>
+            t.id === id ? { ...t, title, ghostMod: true, ghost: true } : t,
+          ),
+        );
+
+        return { previousList: todoList, modifiedId: id };
+      },
+      onSuccess: async (_1, _2, onMutateResult) => {
+        const id = onMutateResult.modifiedId;
+
+        queryClient.setQueryData(
+          ["todos"],
+          todoList.map((t) =>
+            t.id === id
+              ? {
+                  title: t.title,
+                  id: t.id,
+                  completed: t.completed,
+                }
+              : t,
+          ),
+        );
+      },
+      onError: (error, _, onMutateResult) => {
+        console.error("Failed to modify todo:", error);
+
+        if (onMutateResult) {
+          queryClient.setQueryData(["todos"], onMutateResult.previousList);
         }
 
         queryClient.invalidateQueries({ queryKey: ["todos"] });
@@ -183,6 +231,12 @@ export default function Todo({
   const isSyncing =
     getTodos.isFetching || addTodo.isPending || toggleTodo.isPending;
 
+  const debouncedModify = useRef(
+    debounce(({ id, title }) => {
+      modifyTodo.mutate({ id, title });
+    }, 500),
+  ).current;
+
   return (
     <div className="">
       <div className="mb-2 flex flex-row justify-between">
@@ -236,14 +290,29 @@ export default function Todo({
 
             <button
               type="button"
-              disabled={!item.completed || item.ghost}
+              disabled={item.ghost}
               className={`cursor-pointer rounded border border-gray-300 px-1 disabled:cursor-not-allowed ${item.completed ? "font-bold text-gray-700" : "text-gray-500"}`}
               onClick={() => deleteTodo.mutate({ id: item.id })}
             >
               D
             </button>
 
-            <span>{item.title}</span>
+            <input
+              type="text"
+              name="title"
+              defaultValue={item.title}
+              disabled={!!item.ghostDel || !!item.ghostAdd}
+              className={`${item.ghostMod ? "opacity-50" : ""}`}
+              onChange={(e) => {
+                e.preventDefault();
+                queryClient.setQueryData(["todos"], (old: typeof todoList) =>
+                  old.map((t) =>
+                    t.id === item.id ? { ...t, title: e.target.value } : t,
+                  ),
+                );
+                debouncedModify({ id: item.id, title: e.target.value });
+              }}
+            />
           </li>
         ))}
       </ul>

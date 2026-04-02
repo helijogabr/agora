@@ -20,7 +20,7 @@ export const getTodos = defineAction({
 
 export const addTodo = defineAction({
   input: z.object({
-    title: z.string(),
+    title: z.string().trim(),
     completed: z.boolean().optional(),
   }),
   handler: async (input, { session }) => {
@@ -89,6 +89,52 @@ export const toggleTodo = defineAction({
     return { success: res.rowsAffected === 1 };
   },
 });
+
+export const changeTodo = defineAction({
+  input: z.object({
+    id: z.number(),
+    title: z.string().trim().optional(),
+    completed: z.boolean().optional(),
+  }),
+  handler: async (input, { session }) => {
+    const { id, title, completed } = input;
+    const user = await session?.get("userId");
+
+    if (!user) {
+      throw new ActionError({
+        code: "UNAUTHORIZED",
+        message: "You must be logged in to delete a todo",
+      });
+    }
+
+    const todo = await db
+      .select()
+      .from(Todo)
+      .where(and(eq(Todo.id, id)))
+      .then((rows) => rows[0]);
+
+    if (!todo) {
+      throw new ActionError({
+        code: "NOT_FOUND",
+        message: "Todo not found",
+      });
+    }
+
+    if (todo.user !== user) {
+      throw new ActionError({
+        code: "FORBIDDEN",
+        message: "You cannot delete a todo that is not yours",
+      });
+    }
+
+    const res = await db
+      .update(Todo)
+      .set({ title, completed })
+      .where(and(eq(Todo.id, id), eq(Todo.user, user)));
+
+    return { success: res.rowsAffected === 1 };
+  }
+})
 
 export const deleteTodo = defineAction({
   input: z.object({

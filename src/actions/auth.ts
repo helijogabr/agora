@@ -7,8 +7,8 @@ import bcrypt from "bcrypt";
 export const createUserForm = defineAction({
   accept: "form",
   input: z.object({
-    username: z.string(),
-    password: z.string(),
+    username: z.string().trim().toLowerCase(),
+    password: z.string().trim().toLowerCase(),
   }),
   handler: async (input, { session }) => {
     const { username, password } = input;
@@ -49,8 +49,8 @@ export const createUserForm = defineAction({
 export const loginForm = defineAction({
   accept: "form",
   input: z.object({
-    username: z.string(),
-    password: z.string(),
+    username: z.string().trim().toLowerCase(),
+    password: z.string().trim().toLowerCase(),
   }),
   handler: async (input, { session, url }) => {
     const { username, password } = input;
@@ -83,6 +83,7 @@ export const loginForm = defineAction({
         });
       }
 
+      session?.destroy();
       session?.set("userId", Number(result.lastInsertRowid), {
         ttl: 1000 * 60 * 60 * 24, // 1 day
       });
@@ -102,6 +103,7 @@ export const loginForm = defineAction({
       });
     }
 
+    session?.destroy();
     session?.set("userId", user.id, {
       ttl: 1000 * 60 * 60 * 24, // 1 day
     });
@@ -115,7 +117,7 @@ export const loginForm = defineAction({
 
 export const logout = defineAction({
   handler: async (_input, { session }) => {
-    session?.delete("userId");
-    return { success: true };
+    session?.destroy();
+    return { success: (await session?.get("userId")) === undefined };
   },
 });
