@@ -118,18 +118,17 @@ export const toggleTodo = defineAction({
   },
 });
 
-export const changeTodo = defineAction({
+export const changeTodoTitle = defineAction({
   input: z.object({
     id: z.number(),
-    title: z.string().trim().nonempty().optional(),
-    completed: z.boolean().optional(),
+    title: z.string().trim().nonempty(),
   }),
   handler: async (input, { session }) => {
     if (import.meta.env.DEV) {
       await sleep(500);
     }
 
-    const { id, title, completed } = input;
+    const { id, title } = input;
     const user = await session?.get("userId");
 
     if (!user) {
@@ -163,7 +162,7 @@ export const changeTodo = defineAction({
 
     const res = await db
       .update(Todo)
-      .set({ title, completed })
+      .set({ title })
       .where(and(eq(Todo.id, id), eq(Todo.user, user)));
 
     return { success: res.rowsAffected === 1 };

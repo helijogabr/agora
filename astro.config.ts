@@ -8,7 +8,11 @@ import { dbDriver } from "./db/driver/config";
 
 // https://astro.build/config
 export default defineConfig({
-  integrations: [react(), db(), sitemap()],
+  integrations: [react({
+    babel: {
+      plugins: ["babel-plugin-react-compiler"]
+    }
+  }), db(), sitemap()],
   vite: {
     plugins: [tailwindcss()],
   },

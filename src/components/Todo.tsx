@@ -1,18 +1,24 @@
 import { actions } from "astro:actions";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import debounce from "lodash/debounce";
 import { useMemo, useRef, useState } from "react";
 import { queryClient } from "@/query_client";
+import TodoElement from "./TodoElement";
 
 export type TodoItem = {
   id: number;
   title: string;
   completed?: boolean;
-  ghost?: boolean; // flag for any optimistic state
   tempId?: number; // for optimistic additions
-  [key: string]: unknown; // for optimistic flags
+  ghostAdd?: boolean; // for optimistic additions
+  ghostDel?: boolean; // for optimistic deletions
+  ghostMod?: boolean; // for optimistic modifications
+  ghostCheck?: boolean; // for optimistic toggles
 };
+
+export function isGhost(item: TodoItem) {
+  return item.ghostAdd || item.ghostDel || item.ghostMod;
+}
 
 export default function Todo({
   todos,
@@ -26,7 +32,17 @@ export default function Todo({
   const { data, isFetching } = useQuery(
     {
       queryKey: ["todos"],
-      queryFn: () => actions.getTodos.orThrow(),
+      queryFn: async () => {
+        const todos: TodoItem[] = await actions.getTodos.orThrow();
+
+        todos.forEach((t) => {
+          if (t.tempId) return;
+          const tempId = oldTempIds.get(t.id);
+          if (tempId) t.tempId = tempId;
+        });
+
+        return todos;
+      },
       initialData: todos as TodoItem[],
       staleTime: 5 * 60 * 1000, // 5 min
     },
@@ -43,11 +59,10 @@ export default function Todo({
         const tempId = Date.now();
 
         const optimisticItem = {
-          tempId,
           title: input.title,
+          tempId,
           completed: false,
-          ghostAdd: true,
-          ghost: true,
+          ghostAdd: true
         };
 
         const previousList = context.client.getQueryData(["todos"]);
@@ -93,177 +108,19 @@ export default function Todo({
     queryClient,
   );
 
-  const modifyTodo = useMutation(
-    {
-      mutationFn: actions.changeTodo.orThrow,
-      onMutate: async (input, context) => {
-        await context.client.cancelQueries({ queryKey: ["todos"] });
-
-        const { id, title } = input;
-
-        const previousList = context.client.getQueryData(["todos"]);
-
-        context.client.setQueryData(
-          ["todos"],
-          (old: TodoItem[] | undefined) =>
-            old?.map((t) =>
-              t.id === id ? { ...t, title, ghostMod: true, ghost: true } : t,
-            ) ?? [],
-        );
-
-        return { previousList, modifiedId: id };
-      },
-      onSuccess: async (_1, _2, onMutateResult, context) => {
-        const id = onMutateResult.modifiedId;
-
-        context.client.setQueryData(
-          ["todos"],
-          (old: TodoItem[] | undefined) =>
-            old?.map((t) =>
-              t.id === id
-                ? {
-                    title: t.title,
-                    id: t.id,
-                    completed: t.completed,
-                  }
-                : t,
-            ) ?? [],
-        );
-      },
-      onError: (error, _, onMutateResult, context) => {
-        console.error("Failed to modify todo:", error);
-
-        if (onMutateResult) {
-          context.client.setQueryData(["todos"], onMutateResult.previousList);
-        }
-
-        context.client.invalidateQueries({ queryKey: ["todos"] });
-      },
-    },
-    queryClient,
-  );
-
-  const toggleTodo = useMutation(
-    {
-      mutationFn: actions.toggleTodo.orThrow,
-      onMutate: async (input, context) => {
-        await context.client.cancelQueries({ queryKey: ["todos"] });
-        const id = input.id;
-
-        const previousList = context.client.getQueryData(["todos"]);
-
-        context.client.setQueryData(
-          ["todos"],
-          (old: TodoItem[] | undefined) =>
-            old?.map((t) =>
-              t.id === id
-                ? {
-                    ...t,
-                    completed: !t.completed,
-                    ghostCheck: true,
-                    ghost: true,
-                  }
-                : t,
-            ) ?? [],
-        );
-
-        return { previousList, toggledId: id };
-      },
-      onSuccess: async (_1, _2, onMutateResult, context) => {
-        const id = onMutateResult.toggledId;
-
-        context.client.setQueryData(["todos"], (old: TodoItem[] | undefined) =>
-          old?.map((t) =>
-            t.id === id
-              ? {
-                  ...t,
-                  ghost: false,
-                  ghostCheck: false,
-                }
-              : t,
-          ),
-        );
-      },
-      onError: (error, _, onMutateResult, context) => {
-        if (onMutateResult) {
-          context.client.setQueryData(["todos"], onMutateResult.previousList);
-        }
-
-        console.error("Failed to toggle todo:", error);
-        context.client.invalidateQueries({ queryKey: ["todos"] });
-      },
-    },
-    queryClient,
-  );
-
-  const deleteTodo = useMutation(
-    {
-      mutationFn: actions.deleteTodo.orThrow,
-      onMutate: async (input, context) => {
-        await context.client.cancelQueries({ queryKey: ["todos"] });
-
-        const id = input.id;
-
-        const previousList = context.client.getQueryData(["todos"]);
-
-        context.client.setQueryData(
-          ["todos"],
-          (old: TodoItem[] | undefined) =>
-            old?.map((t) =>
-              t.id === id ? { ...t, ghostDel: true, ghost: true } : t,
-            ) ?? [],
-        );
-
-        return { previousList, deletedId: id };
-      },
-      onSuccess: (_1, input, _2, context) => {
-        const id = input.id;
-        oldTempIds.delete(id);
-
-        context.client.setQueryData(
-          ["todos"],
-          (old: TodoItem[] | undefined) =>
-            old?.filter((t) => t.id !== id) ?? [],
-        );
-      },
-      onError: (error, _, onMutateResult, context) => {
-        console.error("Failed to delete todo:", error);
-
-        if (onMutateResult) {
-          context.client.setQueryData(["todos"], onMutateResult.previousList);
-        }
-
-        context.client.invalidateQueries({ queryKey: ["todos"] });
-      },
-    },
-    queryClient,
-  );
-
-  const isSyncing = isFetching || addTodo.isPending || toggleTodo.isPending;
-
-  const debouncedModify = useRef(
-    debounce(({ id, title }) => {
-      modifyTodo.mutate({ id, title });
-    }, 500),
-  ).current;
-
   const todoList = useMemo(() => {
-    const copy = data.map((t) => {
-      if (t.tempId) return t;
-      const tempId = oldTempIds.get(t.id);
-      return tempId ? { ...t, tempId } : t;
-    });
-
-    return copy.sort((a, b) => {
+    return data.toSorted((a, b) => {
       if (a.completed === b.completed) {
         return Number(b.tempId ?? b.id) - Number(a.tempId ?? a.id);
       }
 
       return a.completed ? 1 : -1;
     });
-  }, [data, oldTempIds]);
+  }, [data]);
 
   const [animation] = useAutoAnimate();
+
+  const isSyncing = isFetching || addTodo.isPending;
 
   return (
     <div className="">
@@ -305,56 +162,11 @@ export default function Todo({
         ref={animation}
       >
         {todoList.map((item) => (
-          <li
+          <TodoElement
             key={item.tempId ?? item.id}
-            className={`flex flex-row gap-1 ${item.ghostAdd ? "opacity-50" : ""} ${item.ghostDel ? "line-through opacity-30" : ""}`}
-          >
-            <input
-              type="checkbox"
-              checked={item.completed}
-              onChange={() => toggleTodo.mutate({ id: item.id })}
-              disabled={item.ghost}
-              className={`cursor-pointer rounded border-gray-300 disabled:cursor-not-allowed ${item.ghostCheck ? "opacity-50" : ""}`}
-            />
-
-            <button
-              type="button"
-              disabled={item.ghost}
-              className={`cursor-pointer rounded border border-gray-300 px-1 disabled:cursor-not-allowed ${item.completed ? "font-bold text-gray-700" : "text-gray-500"}`}
-              onClick={() => deleteTodo.mutate({ id: item.id })}
-            >
-              D
-            </button>
-
-            <input
-              type="text"
-              name="title"
-              defaultValue={item.title}
-              disabled={!!item.ghostDel || !!item.ghostAdd}
-              className={`${item.ghostMod ? "opacity-50" : ""}`}
-              onChange={(e) => {
-                e.preventDefault();
-                if (item.ghost || item.ghostAdd) return;
-
-                const newTitle = e.target.value.trim();
-                if (!newTitle) return;
-
-                queryClient.setQueryData(["todos"], (old: typeof todoList) =>
-                  old.map((t) =>
-                    t.id === item.id ? { ...t, title: newTitle} : t,
-                  ),
-                );
-                debouncedModify({ id: item.id, title: newTitle });
-              }}
-            />
-
-            {import.meta.env.DEV && item.tempId && (
-              <span className="text-sm text-gray-400">
-                {" "}
-                (tempId: {item.tempId})
-              </span>
-            )}
-          </li>
+            oldTempIds={oldTempIds}
+            {...item}
+          />
         ))}
       </ul>
     </div>
