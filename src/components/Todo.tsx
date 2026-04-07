@@ -218,6 +218,7 @@ export default function Todo({
       },
       onSuccess: (_1, input, _2, context) => {
         const id = input.id;
+        oldTempIds.delete(id);
 
         context.client.setQueryData(
           ["todos"],
@@ -333,12 +334,17 @@ export default function Todo({
               className={`${item.ghostMod ? "opacity-50" : ""}`}
               onChange={(e) => {
                 e.preventDefault();
+                if (item.ghost || item.ghostAdd) return;
+
+                const newTitle = e.target.value.trim();
+                if (!newTitle) return;
+
                 queryClient.setQueryData(["todos"], (old: typeof todoList) =>
                   old.map((t) =>
-                    t.id === item.id ? { ...t, title: e.target.value } : t,
+                    t.id === item.id ? { ...t, title: newTitle} : t,
                   ),
                 );
-                debouncedModify({ id: item.id, title: e.target.value });
+                debouncedModify({ id: item.id, title: newTitle });
               }}
             />
 

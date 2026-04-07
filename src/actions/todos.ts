@@ -37,7 +37,7 @@ export const getTodos = defineAction({
 
 export const addTodo = defineAction({
   input: z.object({
-    title: z.string().trim(),
+    title: z.string().trim().nonempty(),
     completed: z.boolean().optional(),
   }),
   handler: async (input, { session }) => {
@@ -121,7 +121,7 @@ export const toggleTodo = defineAction({
 export const changeTodo = defineAction({
   input: z.object({
     id: z.number(),
-    title: z.string().trim().optional(),
+    title: z.string().trim().nonempty().optional(),
     completed: z.boolean().optional(),
   }),
   handler: async (input, { session }) => {
