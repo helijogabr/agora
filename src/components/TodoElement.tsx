@@ -1,7 +1,7 @@
 import { actions } from "astro:actions";
 import { useMutation } from "@tanstack/react-query";
 import debounce from "lodash/debounce";
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo } from "react";
 import { queryClient } from "@/query_client";
 import type { TodoItem } from "./Todo";
 
@@ -10,8 +10,6 @@ type Props = {
 } & TodoItem;
 
 function TodoElement({ oldTempIds, ...item }: Props) {
-  const [newTitle, setNewTitle] = useState(item.title ?? "");
-
   if (import.meta.env.DEV) {
     console.log(item);
   }
@@ -87,7 +85,7 @@ function TodoElement({ oldTempIds, ...item }: Props) {
               t.id === id
                 ? {
                     ...t,
-                    completed: !t.completed,
+                    completed: input.completed,
                     ghostCheck: true,
                   }
                 : t,
@@ -177,12 +175,12 @@ function TodoElement({ oldTempIds, ...item }: Props) {
     >
       <input
         type="checkbox"
-        checked={!!item.completed}
-        onChange={() => {
-          if (item.ghostDel) return;
-          toggleTodo.mutate({ id: item.id });
+        defaultChecked={!!item.completed}
+        autoComplete="off"
+        disabled={item.ghostDel || item.ghostAdd || item.ghostCheck}
+        onChange={(e) => {
+          toggleTodo.mutate({ id: item.id, completed: !!e.target.checked });
         }}
-        disabled={!!item.ghostDel || !!item.ghostAdd || !!item.ghostCheck}
         className={`cursor-pointer rounded border-gray-300 disabled:cursor-not-allowed ${item.ghostCheck ? "opacity-50" : ""}`}
       />
 
@@ -198,17 +196,15 @@ function TodoElement({ oldTempIds, ...item }: Props) {
       <input
         type="text"
         name="title"
-        value={newTitle ?? ""}
+        autoComplete="off"
+        defaultValue={item.title ?? ""}
         disabled={item.ghostDel || item.ghostAdd}
         className={`${item.ghostMod ? "opacity-50" : ""}`}
         onChange={(e) => {
-          setNewTitle(e.target.value);
-
           if (item.ghostDel || item.ghostAdd) return;
 
           const title = e.target.value.trim();
-          if (!title) return;
-          if (title === item.title) return;
+          if (!title || title === item.title) return;
 
           debouncedModify(item.id, title);
         }}

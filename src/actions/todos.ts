@@ -1,5 +1,5 @@
 import { ActionError, defineAction } from "astro:actions";
-import { and, asc, db, desc, eq, not, Todo } from "astro:db";
+import { and, asc, db, desc, eq, Todo } from "astro:db";
 import { z } from "astro/zod";
 
 async function sleep(ms: number) {
@@ -71,13 +71,14 @@ export const addTodo = defineAction({
 export const toggleTodo = defineAction({
   input: z.object({
     id: z.number(),
+    completed: z.boolean(),
   }),
   handler: async (input, { session }) => {
     if (import.meta.env.DEV) {
       await sleep(500);
     }
 
-    const { id } = input;
+    const { id, completed } = input;
     const user = await session?.get("userId");
 
     if (!user) {
@@ -111,7 +112,7 @@ export const toggleTodo = defineAction({
 
     const res = await db
       .update(Todo)
-      .set({ completed: not(Todo.completed) })
+      .set({ completed })
       .where(and(eq(Todo.id, id), eq(Todo.user, user)));
 
     return { success: res.rowsAffected === 1 };

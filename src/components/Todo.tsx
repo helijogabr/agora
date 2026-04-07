@@ -16,10 +16,6 @@ export type TodoItem = {
   ghostCheck?: boolean; // for optimistic toggles
 };
 
-export function isGhost(item: TodoItem) {
-  return item.ghostAdd || item.ghostDel || item.ghostMod;
-}
-
 export default function Todo({
   todos,
 }: {
@@ -36,7 +32,6 @@ export default function Todo({
         const todos: TodoItem[] = await actions.getTodos.orThrow();
 
         todos.forEach((t) => {
-          if (t.tempId) return;
           const tempId = oldTempIds.get(t.id);
           if (tempId) t.tempId = tempId;
         });
@@ -48,6 +43,10 @@ export default function Todo({
     },
     queryClient,
   );
+
+  if (import.meta.env.DEV && import.meta.env.SSR) {
+    console.log("Rendering Todo component with data:", data);
+  }
 
   const addTodo = useMutation(
     {
@@ -62,7 +61,7 @@ export default function Todo({
           title: input.title,
           tempId,
           completed: false,
-          ghostAdd: true
+          ghostAdd: true,
         };
 
         const previousList = context.client.getQueryData(["todos"]);
@@ -109,6 +108,8 @@ export default function Todo({
   );
 
   const todoList = useMemo(() => {
+    if (import.meta.env.SSR) return data ?? [];
+
     return data.toSorted((a, b) => {
       if (a.completed === b.completed) {
         return Number(b.tempId ?? b.id) - Number(a.tempId ?? a.id);
