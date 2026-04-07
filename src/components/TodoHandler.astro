@@ -15,12 +15,11 @@ if (!user) {
 }
 
 const { data, error } = await Astro.callAction(actions.getTodos, {});
-console.log(data)
 ---
 
 {
   data ? (
-    <TodoList todos={data} client:visible />
+    <TodoList todos={data} client:load />
   ) : (
     <p>ERROR WHILE FECHING: {error}</p>
   )

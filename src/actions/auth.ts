@@ -66,14 +66,16 @@ export const loginForm = defineAction({
       .select({
         id: User.id,
         name: User.name,
-        password: User.password
+        password: User.password,
       })
       .from(User)
       .where(eq(User.name, username))
       .limit(1)
       .then((rows) => rows[0]);
 
-    if (!user) {
+    let id = user?.id;
+
+    if (!id || !user) {
       const hashed = await bcrypt.hash(password, 10);
 
       const result = await db
@@ -87,28 +89,23 @@ export const loginForm = defineAction({
         });
       }
 
-      session?.destroy();
-      session?.set("userId", Number(result.lastInsertRowid), {
-        ttl: 1000 * 60 * 60 * 24, // 1 day
-      });
+      id = Number(result.lastInsertRowid);
+    } else {
+      const passwordMatch = await bcrypt.compare(password, user.password);
 
-      return {
-        success: true,
-        redirect: url.searchParams.get("return") || undefined,
-      };
-    }
-
-    const passwordMatch = await bcrypt.compare(password, user.password);
-
-    if (!passwordMatch) {
-      throw new ActionError({
-        code: "UNAUTHORIZED",
-        message: "Invalid password",
-      });
+      if (!passwordMatch) {
+        throw new ActionError({
+          code: "UNAUTHORIZED",
+          message: "Invalid password",
+        });
+      }
     }
 
     session?.destroy();
-    session?.set("userId", user.id, {
+    session?.set("userId", Number(id), {
+      ttl: 1000 * 60 * 60 * 24, // 1 day
+    });
+    session?.set("username", username, {
       ttl: 1000 * 60 * 60 * 24, // 1 day
     });
 

@@ -21,10 +21,12 @@ export default function Todo({
 }) {
   const [newTodo, setNewTodo] = useState("");
 
+  const oldTempIds = useRef(new Map<number, number>()).current;
+
   const { data, isFetching } = useQuery(
     {
       queryKey: ["todos"],
-      queryFn: actions.getTodos.orThrow,
+      queryFn: () => actions.getTodos.orThrow(),
       initialData: todos as TodoItem[],
       staleTime: 5 * 60 * 1000, // 5 min
     },
@@ -34,14 +36,13 @@ export default function Todo({
   const addTodo = useMutation(
     {
       mutationFn: actions.addTodo.orThrow,
-      async onMutate(input) {
-        await queryClient.cancelQueries({ queryKey: ["todos"] });
+      async onMutate(input, context) {
+        await context.client.cancelQueries({ queryKey: ["todos"] });
 
         // optimistically add the new todo to the list with a temporary id
-        const tempId =
-          Math.max(0, ...data.map((t) => t.id ?? t.tempId)) + 1;
+        const tempId = Date.now();
 
-        const newTodoItem = {
+        const optimisticItem = {
           tempId,
           title: input.title,
           completed: false,
@@ -49,41 +50,44 @@ export default function Todo({
           ghost: true,
         };
 
-        const previousTodoList = data;
+        const previousList = context.client.getQueryData(["todos"]);
 
-        queryClient.setQueryData(["todos"], [...data, newTodoItem]);
+        context.client.setQueryData(
+          ["todos"],
+          (old: TodoItem[] | undefined) => [...(old || []), optimisticItem],
+        );
 
-        return { previousTodoList, optimisticItem: newTodoItem };
+        return { previousList, optimisticItem };
       },
-      onSuccess: (result, _, onMutateResult) => {
+      onSuccess: (result, _, onMutateResult, context) => {
         const ghost = onMutateResult.optimisticItem;
 
         const newItem = {
           id: result.id,
           title: ghost.title,
           completed: ghost.completed,
-          ...(ghost.tempId === result.id
-            ? {}
-            : {
-                tempId: ghost.tempId,
-              }),
+          tempId: ghost.tempId,
         };
 
-        queryClient.setQueryData(["todos"], (old: TodoItem[]) =>
-          old
-            ? old.map((t) => (t.tempId === ghost.tempId ? newItem : t))
-            : [newItem],
+        oldTempIds.set(newItem.id, newItem.tempId);
+
+        context.client.setQueryData(
+          ["todos"],
+          (old: TodoItem[] | undefined) =>
+            old?.map((t) => (t.tempId === ghost.tempId ? newItem : t)) ?? [
+              newItem,
+            ],
         );
       },
-      onError: (error, _, onMutateResult) => {
+      onError: (error, _, onMutateResult, context) => {
         console.error("Failed to add todo:", error);
         const ghost = onMutateResult?.optimisticItem;
 
         if (ghost) {
-          queryClient.setQueryData(["todos"], onMutateResult.previousTodoList);
+          context.client.setQueryData(["todos"], onMutateResult.previousList);
         }
 
-        queryClient.invalidateQueries({ queryKey: ["todos"] });
+        context.client.invalidateQueries({ queryKey: ["todos"] });
       },
     },
     queryClient,
@@ -92,46 +96,48 @@ export default function Todo({
   const modifyTodo = useMutation(
     {
       mutationFn: actions.changeTodo.orThrow,
-      onMutate: async (input) => {
-        await queryClient.cancelQueries({ queryKey: ["todos"] });
+      onMutate: async (input, context) => {
+        await context.client.cancelQueries({ queryKey: ["todos"] });
 
         const { id, title } = input;
 
-        const previousList = data;
+        const previousList = context.client.getQueryData(["todos"]);
 
-        queryClient.setQueryData(
+        context.client.setQueryData(
           ["todos"],
-          data.map((t) =>
-            t.id === id ? { ...t, title, ghostMod: true, ghost: true } : t,
-          ),
+          (old: TodoItem[] | undefined) =>
+            old?.map((t) =>
+              t.id === id ? { ...t, title, ghostMod: true, ghost: true } : t,
+            ) ?? [],
         );
 
         return { previousList, modifiedId: id };
       },
-      onSuccess: async (_1, _2, onMutateResult) => {
+      onSuccess: async (_1, _2, onMutateResult, context) => {
         const id = onMutateResult.modifiedId;
 
-        queryClient.setQueryData(
+        context.client.setQueryData(
           ["todos"],
-          data.map((t) =>
-            t.id === id
-              ? {
-                  title: t.title,
-                  id: t.id,
-                  completed: t.completed,
-                }
-              : t,
-          ),
+          (old: TodoItem[] | undefined) =>
+            old?.map((t) =>
+              t.id === id
+                ? {
+                    title: t.title,
+                    id: t.id,
+                    completed: t.completed,
+                  }
+                : t,
+            ) ?? [],
         );
       },
-      onError: (error, _, onMutateResult) => {
+      onError: (error, _, onMutateResult, context) => {
         console.error("Failed to modify todo:", error);
 
         if (onMutateResult) {
-          queryClient.setQueryData(["todos"], onMutateResult.previousList);
+          context.client.setQueryData(["todos"], onMutateResult.previousList);
         }
 
-        queryClient.invalidateQueries({ queryKey: ["todos"] });
+        context.client.invalidateQueries({ queryKey: ["todos"] });
       },
     },
     queryClient,
@@ -139,48 +145,52 @@ export default function Todo({
 
   const toggleTodo = useMutation(
     {
-      mutationKey: ["toggleTodo"],
       mutationFn: actions.toggleTodo.orThrow,
-      onMutate: async (input) => {
-        await queryClient.cancelQueries({ queryKey: ["todos"] });
+      onMutate: async (input, context) => {
+        await context.client.cancelQueries({ queryKey: ["todos"] });
         const id = input.id;
 
-        const previousList = data;
+        const previousList = context.client.getQueryData(["todos"]);
 
-        queryClient.setQueryData(
+        context.client.setQueryData(
           ["todos"],
-          data.map((t) =>
-            t.id === id
-              ? { ...t, completed: !t.completed, ghostCheck: true, ghost: true }
-              : t,
-          ),
+          (old: TodoItem[] | undefined) =>
+            old?.map((t) =>
+              t.id === id
+                ? {
+                    ...t,
+                    completed: !t.completed,
+                    ghostCheck: true,
+                    ghost: true,
+                  }
+                : t,
+            ) ?? [],
         );
 
         return { previousList, toggledId: id };
       },
-      onSuccess: async (_1, _2, onMutateResult) => {
+      onSuccess: async (_1, _2, onMutateResult, context) => {
         const id = onMutateResult.toggledId;
 
-        queryClient.setQueryData(
-          ["todos"],
-          data.map((t) =>
+        context.client.setQueryData(["todos"], (old: TodoItem[] | undefined) =>
+          old?.map((t) =>
             t.id === id
               ? {
-                  title: t.title,
-                  id: t.id,
-                  completed: t.completed,
+                  ...t,
+                  ghost: false,
+                  ghostCheck: false,
                 }
               : t,
           ),
         );
       },
-      onError: (error, _, onMutateResult) => {
+      onError: (error, _, onMutateResult, context) => {
         if (onMutateResult) {
-          queryClient.setQueryData(["todos"], onMutateResult.previousList);
+          context.client.setQueryData(["todos"], onMutateResult.previousList);
         }
 
         console.error("Failed to toggle todo:", error);
-        queryClient.invalidateQueries({ queryKey: ["todos"] });
+        context.client.invalidateQueries({ queryKey: ["todos"] });
       },
     },
     queryClient,
@@ -189,45 +199,46 @@ export default function Todo({
   const deleteTodo = useMutation(
     {
       mutationFn: actions.deleteTodo.orThrow,
-      onMutate: async (input) => {
-        await queryClient.cancelQueries({ queryKey: ["todos"] });
+      onMutate: async (input, context) => {
+        await context.client.cancelQueries({ queryKey: ["todos"] });
 
         const id = input.id;
 
-        const previousList = data;
+        const previousList = context.client.getQueryData(["todos"]);
 
-        queryClient.setQueryData(
+        context.client.setQueryData(
           ["todos"],
-          data.map((t) =>
-            t.id === id ? { ...t, ghostDel: true, ghost: true } : t,
-          ),
+          (old: TodoItem[] | undefined) =>
+            old?.map((t) =>
+              t.id === id ? { ...t, ghostDel: true, ghost: true } : t,
+            ) ?? [],
         );
 
         return { previousList, deletedId: id };
       },
-      onSuccess: () => {
-        const id = deleteTodo.variables?.id;
+      onSuccess: (_1, input, _2, context) => {
+        const id = input.id;
 
-        queryClient.setQueryData(
+        context.client.setQueryData(
           ["todos"],
-          data.filter((t) => t.id !== id),
+          (old: TodoItem[] | undefined) =>
+            old?.filter((t) => t.id !== id) ?? [],
         );
       },
-      onError: (error, _, onMutateResult) => {
+      onError: (error, _, onMutateResult, context) => {
         console.error("Failed to delete todo:", error);
 
         if (onMutateResult) {
-          queryClient.setQueryData(["todos"], onMutateResult.previousList);
+          context.client.setQueryData(["todos"], onMutateResult.previousList);
         }
 
-        queryClient.invalidateQueries({ queryKey: ["todos"] });
+        context.client.invalidateQueries({ queryKey: ["todos"] });
       },
     },
     queryClient,
   );
 
-  const isSyncing =
-    isFetching || addTodo.isPending || toggleTodo.isPending;
+  const isSyncing = isFetching || addTodo.isPending || toggleTodo.isPending;
 
   const debouncedModify = useRef(
     debounce(({ id, title }) => {
@@ -235,17 +246,21 @@ export default function Todo({
     }, 500),
   ).current;
 
-  const todoList = useMemo(
-    () =>
-      data.sort((a, b) => {
-        if (a.completed === b.completed) {
-          return (a.tempId ?? a.id) - (b.tempId ?? b.id);
-        }
+  const todoList = useMemo(() => {
+    const copy = data.map((t) => {
+      if (t.tempId) return t;
+      const tempId = oldTempIds.get(t.id);
+      return tempId ? { ...t, tempId } : t;
+    });
 
-        return a.completed ? 1 : -1;
-      }),
-    [data],
-  );
+    return copy.sort((a, b) => {
+      if (a.completed === b.completed) {
+        return Number(b.tempId ?? b.id) - Number(a.tempId ?? a.id);
+      }
+
+      return a.completed ? 1 : -1;
+    });
+  }, [data, oldTempIds]);
 
   const [animation] = useAutoAnimate();
 
@@ -326,6 +341,13 @@ export default function Todo({
                 debouncedModify({ id: item.id, title: e.target.value });
               }}
             />
+
+            {import.meta.env.DEV && item.tempId && (
+              <span className="text-sm text-gray-400">
+                {" "}
+                (tempId: {item.tempId})
+              </span>
+            )}
           </li>
         ))}
       </ul>

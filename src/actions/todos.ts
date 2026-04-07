@@ -8,11 +8,11 @@ async function sleep(ms: number) {
 
 export const getTodos = defineAction({
   handler: async (_, { session }) => {
-    const user = await session?.get("userId");
-
     if (import.meta.env.DEV) {
       await sleep(500);
     }
+
+    const user = await session?.get("userId");
 
     if (!user) {
       throw new ActionError({

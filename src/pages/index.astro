@@ -3,6 +3,8 @@ import Logout from "@components/Logout.tsx";
 import TodoHandler from "@components/TodoHandler.astro";
 import Layout from "@layouts/Layout.astro";
 
+export const prerender = false;
+
 if (!(await Astro.session?.get("userId"))) {
   const returnTo = Astro.url.pathname.trim();
 
