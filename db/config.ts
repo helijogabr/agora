@@ -10,6 +10,19 @@ const User = defineTable({
   },
 });
 
+const Post = defineTable({
+  columns: {
+    id: column.number({ primaryKey: true }),
+    title: column.text(),
+    content: column.text(),
+    author: column.number({
+      references: () => User.columns.id,
+    }),
+    createdAt: column.date(),
+    updatedAt: column.date(),
+  },
+});
+
 const Session = defineTable({
   columns: {
     key: column.text({ primaryKey: true }),
@@ -19,7 +32,20 @@ const Session = defineTable({
   },
 });
 
+const Likes = defineTable({
+  columns: {
+    user: column.number({
+      references: () => User.columns.id,
+    }),
+    post: column.number({
+      references: () => Post.columns.id,
+    }),
+    createdAt: column.date(),
+  },
+  indexes: [{ on: ["user", "post"], unique: true }],
+});
+
 // https://astro.build/db/config
 export default defineDb({
-  tables: { User, Session },
+  tables: { User, Post, Session, Likes },
 });

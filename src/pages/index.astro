@@ -1,7 +1,32 @@
 ---
+import { actions } from "astro:actions";
+import Feed from "@components/Feed";
+import NewPost from "@components/NewPost";
 import Layout from "@layouts/Layout.astro";
+
+if (!(await Astro.session?.get("userId"))) {
+  const returnTo = Astro.url.pathname.trim();
+
+  if (returnTo && returnTo !== "/" && returnTo !== "/login") {
+    return Astro.redirect(`/login?return=${encodeURIComponent(returnTo)}`);
+  } else {
+    return Astro.redirect("/login");
+  }
+}
+
+const { data: posts, error } = await Astro.callAction(actions.getPosts, {
+  limit: 2
+});
 ---
 
 <Layout>
-  <h1>Agora</h1>
+  <!-- centered bold text -->
+  <div class="flex flex-col items-center gap-4 py-8">
+    <h1 class="text-2xl font-bold">Agora</h1>
+
+    <NewPost client:load />
+
+    {error && <p class="error">{error.message}</p>}
+    {posts && <Feed {...posts} client:idle />}
+  </div>
 </Layout>
