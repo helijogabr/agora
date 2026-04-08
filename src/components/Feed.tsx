@@ -39,7 +39,6 @@ export default function Feed({
         type="button"
         onClick={() => {
           queryClient.invalidateQueries({ queryKey: ["posts"] });
-          console.log("Invalidating posts query");
         }}
       >
         Refresh
@@ -52,7 +51,7 @@ export default function Feed({
           >
             {page.posts.map((post) => (
               <Post
-                key={post.id}
+                key={`${post.id}-${post.liked}-${post.likes}`}
                 {...post}
                 createdAt={post.createdAt.toISOString()}
                 updatedAt={post.updatedAt.toISOString()}

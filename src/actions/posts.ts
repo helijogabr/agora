@@ -17,7 +17,11 @@ import { z } from "astro/zod";
 export const getPosts = defineAction({
   input: z.object({
     limit: z.int().nonnegative().max(50).default(10),
-    cursor: z.iso.datetime().nullable().optional(),
+    cursor: z
+      .union([z.date(), z.iso.datetime()])
+      .transform((value) => value ? new Date(value) : value)
+      .nullable()
+      .optional(),
   }),
   handler: async ({ cursor, limit }, { session }) => {
     const user = await session?.get("userId");
@@ -75,8 +79,6 @@ export const getPosts = defineAction({
     const last = posts.at(-1);
 
     const nextCursor = extra && last?.updatedAt;
-
-    console.log({ nextCursor });
 
     return {
       posts,
@@ -162,9 +164,16 @@ export const likePost = defineAction({
       isLiked = false;
     }
 
+    const res = await db
+      .select({ count: count() })
+      .from(Likes)
+      .where(eq(Likes.post, postId))
+      .get();
+
     return {
       success: true,
       isLiked,
+      likes: res?.count ?? 0,
     };
   },
 });

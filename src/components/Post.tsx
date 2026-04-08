@@ -22,7 +22,19 @@ function Post({
   const [isLiked, setIsLiked] = useState(liked);
   const [likeCount, setLikeCount] = useState(likes);
 
-  console.log("RENDERING POST", id);
+  const [prevLiked, setPrevLiked] = useState(isLiked);
+  const [prevLikes, setPrevLikes] = useState(likeCount);
+
+  if (prevLiked !== liked) {
+    setPrevLiked(liked);
+    setIsLiked(liked);
+    setLikeCount(likes);
+  }
+
+  if (prevLikes !== likes) {
+    setPrevLikes(likes);
+    setLikeCount(likes);
+  }
 
   const likePost = useMutation(
     {
@@ -39,6 +51,7 @@ function Post({
       },
       onSuccess: (data) => {
         setIsLiked(data.isLiked);
+        setLikeCount(data.likes);
       },
       onError: (_, _1, onMutateResult) => {
         setIsLiked(liked);
