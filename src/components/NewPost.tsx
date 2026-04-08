@@ -46,9 +46,20 @@ export default function NewPost() {
         disabled={isPending}
         onChange={(e) => setContent(e.target.value)}
       />
-      <button type="submit" disabled={isPending}>
-        Create Post
-      </button>
+      <div className="flex flex-col items-center justify-center h-20 w-60">
+        <button className="
+        h-9/12 w-9/12
+        bg-cyan-100
+        text-md text-blue-700
+        transition-all duration-200
+        hover:cursor-pointer hover:bg-cyan-200 hover:border-cyan-400 hover:h-11/12 hover:w-11/12 hover:text-xl
+        active:cursor-pointer border:h-10/12 active:w-10/12 active:text-lg
+        border-2 border-cyan-300 rounded-2xl 
+        "
+        type="submit" disabled={isPending}>
+          Create Post
+        </button>
+      </div>
     </form>
   );
 }
