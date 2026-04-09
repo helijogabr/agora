@@ -8,7 +8,7 @@ export const createUserForm = defineAction({
   accept: "form",
   input: z.object({
     username: z.string().trim().toLowerCase(),
-    password: z.string().trim().toLowerCase(),
+    password: z.string().trim(),
   }),
   handler: async (input, { session }) => {
     const { username, password } = input;
