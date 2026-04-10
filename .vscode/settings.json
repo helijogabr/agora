@@ -4,7 +4,7 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
-    "package.json": "pnpm-lock.yaml, .nvmrc, pnpm-workspace.yaml",
+    "package.json": "pnpm-lock.yaml, .nvmrc, .node-version, pnpm-workspace.yaml",
     "astro.config.*": "tsconfig.json, .gitignore, .gitattributes",
     ".editorconfig": "biome.json, .prettierrc, .prettierignore",
     ".env": ".env*"

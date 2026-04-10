@@ -1,46 +1,69 @@
-# Astro Starter Kit: Basics
+# Agora: Comunicação e solução para Cidades
 
-```sh
-pnpm create astro@latest -- --template basics
+Uma plataforma de comunicação e integração entre os cidadãos e a prefeitura.
+
+## Instruções de execução:
+
+Este projeto usa `pnpm` como gerenciador de pacotes. Não envie pull requests com arquivos relacionados a outros gerenciadores de pacotes.
+
+```bash
+# instalação do pnpm
+curl -fsSL https://get.pnpm.io/install.sh | sh -
+
+# instalação de dependências
+pnpm install
+
+# ambiente de dev com hot reload
+pnpm dev
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+Os comandos anteriores são suficientes para executar um dev-server com hot reload, mockup do banco de dados e KV de sessões.
 
-## 🚀 Project Structure
+## Principais tecnologias utilizadas:
 
-Inside of your Astro project, you'll see the following folders and files:
+- Typescript
+- Node.js
+- Astro
+- React
+- @tanstack/query
+- Tailwind CSS
+- Drizzle ORM
+- SQLite
 
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
+## Deploy:
+
+- Vercel Serverless
+- Turso DB
+
+Para credenciais, variáveis de ambiente são utilizadas. Localmente, um arquivo `.env` deve ser criado na raiz do projeto, com as seguintes variáveis:
+
+```
+# .env
+ASTRO_DB_REMOTE_URL=[...url]
+ASTRO_DB_APP_TOKEN=[...token]
 ```
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+## Estrutura:
 
-## 🧞 Commands
+```
+db/ - arquivos relacionados ao banco de dados, como migrações e seeds
+public/ - arquivos estáticos servidos automaticamente
+src/
+  actions/ - ações do backend, implementadas via Astro Actions
+  components/ - componentes React e Astro
+  pages/ - páginas do Astro
+  styles/ - arquivos de estilo Tailwind CSS
+  assets/ - arquivos estáticos a serem incluídos, como imagens e fontes
+```
 
-All commands are run from the root of the project, from a terminal:
+## Informações
 
-| Command                | Action                                           |
-| :--------------------- | :----------------------------------------------- |
-| `pnpm install`         | Installs dependencies                            |
-| `pnpm dev`             | Starts local dev server at `localhost:4321`      |
-| `pnpm build`           | Build your production site to `./dist/`          |
-| `pnpm preview`         | Preview your build locally, before deploying     |
-| `pnpm astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `pnpm astro -- --help` | Get help using the Astro CLI                     |
+Todo o backend é implementado via RPC, usando **Astro Actions**, com entrada e saída fortemente tipada e validada via Zod.
+O frontend é misto entre componentes React e Astro, conforme interação client-side e geração de html no servidor for necessária.
 
-## 👀 Want to learn more?
+Chamadas `RPC` devem sempre ser realizadas diretamente no servidor ou via `@tanstack/query` no cliente.
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+Toda a estilização deve ser feita com Tailwind CSS.
+
+O banco de dados é definido via **Astro DB**, com suporte via Drizzle ORM. Para aplicar as migrações, use o comando:
+É possível que o banco de dados seja alterado futuramente, mas Drizzle será mantido mesmo com uma alteração para PostgreSQL.
