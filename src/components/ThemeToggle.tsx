@@ -40,6 +40,7 @@ export default function ThemeToggle({
         name: "theme",
         value: nextTheme === "dark" ? "dark" : "light",
         sameSite: "lax",
+        path: "/",
       });
     } else {
       localStorage.removeItem("theme");

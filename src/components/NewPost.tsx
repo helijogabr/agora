@@ -66,6 +66,14 @@ export default function NewPost() {
         setTitle("");
         setContent("");
       },
+      onError: (_, _1, onMutateResult) => {
+        if (onMutateResult?.previousPosts) {
+          queryClient.setQueryData(
+            ["posts"],
+            () => onMutateResult?.previousPosts,
+          );
+        }
+      },
       onSettled: () => {
         queryClient.invalidateQueries({ queryKey: ["posts"] });
       },
@@ -75,7 +83,7 @@ export default function NewPost() {
 
   return (
     <form
-      className={`flex flex-col items-center gap-2 ${isPending && "opacity-50"}`}
+      className={`flex flex-col items-center gap-2 ${isPending ? "opacity-50" : ""}`}
       aria-disabled={isPending}
       onSubmit={(e) => {
         e.preventDefault();

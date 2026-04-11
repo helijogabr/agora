@@ -19,7 +19,7 @@ function Post({
   ghost,
 }: Props) {
   return (
-    <div className={`rounded bg-gray-300 dark:bg-gray-800 p-4 ${!!ghost && "opacity-50"}`}>
+    <div className={`rounded bg-gray-300 dark:bg-gray-800 p-4 ${!!ghost ? "opacity-50" : ""}`}>
       <h2 className="text-xl font-bold">{title}</h2>
       <p className="text-sm text-gray-500">
         By <strong>{author}</strong> on {new Date(createdAt).toLocaleString()}

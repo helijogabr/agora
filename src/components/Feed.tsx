@@ -40,7 +40,7 @@ export default function Feed({
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="flex flex-col gap-2">
-        <ul ref={!isLoading && animate} className="flex flex-col gap-2">
+        <ul ref={isLoading ? undefined : animate} className="flex flex-col gap-2">
           {data?.pages.map((page) =>
             page.posts.map((post) => (
               <li key={post.id}>
