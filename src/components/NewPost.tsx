@@ -16,8 +16,6 @@ export default function NewPost() {
 
         const previousPosts = context.client.getQueryData(["posts"]);
 
-        console.log(previousPosts);
-
         const post: PostData = {
           author: "You",
           content: newPost.content,
