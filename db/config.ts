@@ -7,7 +7,9 @@ const User = defineTable({
       unique: true,
     }),
     password: column.text(),
-    cidade: column.text(),
+    cidade: column.text({
+      default: "Campinas"
+    })
   },
 });
 
