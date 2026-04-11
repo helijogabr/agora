@@ -4,15 +4,21 @@ import sitemap from "@astrojs/sitemap";
 import vercel from "@astrojs/vercel";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
+import icon from "astro-icon";
 import { dbDriver } from "./db/driver/config";
 
 // https://astro.build/config
 export default defineConfig({
-  integrations: [react({
-    babel: {
-      plugins: ["babel-plugin-react-compiler"]
-    }
-  }), db(), sitemap()],
+  integrations: [
+    react({
+      babel: {
+        plugins: ["babel-plugin-react-compiler"],
+      },
+    }),
+    db(),
+    sitemap(),
+    icon(),
+  ],
   vite: {
     plugins: [tailwindcss()],
   },
