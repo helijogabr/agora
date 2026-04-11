@@ -12,6 +12,8 @@ const prefferedTheme = Astro.cookies.get("theme")?.value as
   | "light"
   | "dark"
   | undefined;
+
+console.log("PREFERRED THEME", prefferedTheme);
 ---
 
 <!doctype html>
@@ -29,17 +31,41 @@ const prefferedTheme = Astro.cookies.get("theme")?.value as
     <ClientRouter />
     <title>{title}</title>
     <slot name="head" />
-    <script is:inline>
-      const savedTheme =
-        localStorage.getItem("theme") ??
-        (window.matchMedia("(prefers-color-scheme: dark)").matches
-          ? "dark"
-          : "light");
-      const root = document.documentElement;
-      root.dataset.theme = savedTheme === "dark" ? "dark" : "light";
-    </script>
+    {
+      !prefferedTheme && (
+        <script is:inline>
+          const local = localStorage.getItem("theme");
+          const savedTheme = local ?? (window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light");
+
+          const root = document.documentElement;
+          root.dataset.theme = savedTheme;
+
+          localStorage.setItem("theme", savedTheme);
+          cookieStore.set({
+            name: "theme",
+            value: savedTheme,
+            expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+            path: "/",
+          });
+        </script>
+      )
+    }
   </head>
   <body class="flex h-full flex-col dark:text-gray-300">
     <slot />
   </body>
 </html>
+
+<script>
+  document.addEventListener("astro:page-load", () => {
+    const local = localStorage.getItem("theme");
+    const savedTheme = local ?? (window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light");
+
+    const root = document.documentElement;
+    root.dataset.theme = savedTheme;
+  });
+</script>

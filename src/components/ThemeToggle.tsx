@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const themes = ["light", "dark", "system"] as const;
+const themes = ["light", "dark"] as const;
 
 function systemTheme() {
   if (import.meta.env.SSR) {
@@ -21,31 +21,24 @@ export default function ThemeToggle({
   defaultTheme?: "light" | "dark" | undefined;
 }) {
   const [theme, setTheme] = useState<(typeof themes)[number]>(
-    defaultTheme || "system",
+    defaultTheme || systemTheme(),
   );
 
   const toggleTheme = () => {
     const currentIndex = themes.indexOf(theme);
     const nextIndex = (currentIndex + 1) % themes.length;
-    const nextTheme = themes[nextIndex] || "system";
+    const nextTheme = themes[nextIndex] || systemTheme();
 
-    const actualTheme: "light" | "dark" =
-      nextTheme === "system" ? systemTheme() : nextTheme;
     const root = document.documentElement;
-    root.dataset.theme = actualTheme;
+    root.dataset.theme = nextTheme;
 
-    if (nextTheme !== "system") {
-      localStorage.setItem("theme", nextTheme === "dark" ? "dark" : "light");
-      cookieStore.set({
-        name: "theme",
-        value: nextTheme === "dark" ? "dark" : "light",
-        sameSite: "lax",
-        path: "/",
-      });
-    } else {
-      localStorage.removeItem("theme");
-      cookieStore.delete("theme");
-    }
+    localStorage.setItem("theme", nextTheme === "dark" ? "dark" : "light");
+    cookieStore.set({
+      name: "theme",
+      value: nextTheme === "dark" ? "dark" : "light",
+      sameSite: "lax",
+      path: "/",
+    });
 
     setTheme(nextTheme);
   };
@@ -57,7 +50,7 @@ export default function ThemeToggle({
       onClick={toggleTheme}
       id="theme-toggle"
     >
-      {theme === "light" ? "Light" : theme === "dark" ? "Dark" : "System"}
+      {theme === "light" ? "Light" : "Dark"}
     </button>
   );
 }
