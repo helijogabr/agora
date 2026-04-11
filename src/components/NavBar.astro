@@ -61,5 +61,7 @@ const prefferedTheme = Astro.cookies.get("theme")?.value as
         </a>
       )
     }
+
+    <ThemeToggle defaultTheme={prefferedTheme} client:idle />
   </div>
 </nav>
