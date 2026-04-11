@@ -12,8 +12,6 @@ const prefferedTheme = Astro.cookies.get("theme")?.value as
   | "light"
   | "dark"
   | undefined;
-
-console.log("PREFERRED THEME", prefferedTheme);
 ---
 
 <!doctype html>
@@ -57,15 +55,3 @@ console.log("PREFERRED THEME", prefferedTheme);
     <slot />
   </body>
 </html>
-
-<script>
-  document.addEventListener("astro:page-load", () => {
-    const local = localStorage.getItem("theme");
-    const savedTheme = local ?? (window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light");
-
-    const root = document.documentElement;
-    root.dataset.theme = savedTheme;
-  });
-</script>
