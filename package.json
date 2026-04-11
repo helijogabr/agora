@@ -11,6 +11,7 @@
     "preview": "astro preview",
     "astro": "astro"
   },
+  "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@astrojs/db": "^0.20.1",
     "@astrojs/react": "^5.0.2",
