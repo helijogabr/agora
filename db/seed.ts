@@ -9,11 +9,13 @@ export default async function seed() {
       name: "alice",
       id: 1,
       password: await bcrypt.hash("123", 10),
+      cidade: "São Paulo",
     },
     {
       name: "bob",
       id: 2,
       password: await bcrypt.hash("456", 10),
+      cidade: "Rio de Janeiro",
     },
   ]);
 
