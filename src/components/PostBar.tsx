@@ -31,7 +31,10 @@ export default function PostBar({ id, liked, likes }: Props) {
       onError: (_, _1, onMutateResult) => {
         setIsLiked(liked);
         setLikeCount(likes);
-        queryClient.setQueryData(["posts"], onMutateResult?.previousPosts);
+        queryClient.setQueryData(
+          ["posts"],
+          () => onMutateResult?.previousPosts,
+        );
       },
       onSettled: () => {
         queryClient.invalidateQueries({ queryKey: ["posts"] });
@@ -42,20 +45,6 @@ export default function PostBar({ id, liked, likes }: Props) {
 
   const [isLiked, setIsLiked] = useState(liked);
   const [likeCount, setLikeCount] = useState(likes);
-
-  const [prevLiked, setPrevLiked] = useState(isLiked);
-  const [prevLikes, setPrevLikes] = useState(likeCount);
-
-  if (prevLiked !== liked) {
-    setPrevLiked(liked);
-    setIsLiked(liked);
-    setLikeCount(likes);
-  }
-
-  if (prevLikes !== likes) {
-    setPrevLikes(likes);
-    setLikeCount(likes);
-  }
 
   return (
     <div>

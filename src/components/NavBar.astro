@@ -10,7 +10,7 @@ const urls = {
 const current = Astro.url.pathname;
 const username = await Astro.session?.get("username");
 
-const prefferedTheme = Astro.cookies.get("theme")?.value as
+const preferredTheme = Astro.cookies.get("theme")?.value as
   | "light"
   | "dark"
   | undefined;
@@ -62,6 +62,6 @@ const prefferedTheme = Astro.cookies.get("theme")?.value as
       )
     }
 
-    <ThemeToggle defaultTheme={prefferedTheme} client:idle />
+    <ThemeToggle defaultTheme={preferredTheme} client:idle />
   </div>
 </nav>

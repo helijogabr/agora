@@ -11,25 +11,26 @@ export default function NewPost() {
   const { mutate, isPending } = useMutation(
     {
       mutationFn: actions.createPost.orThrow,
-      onMutate: async (newPost, context) => {
-        await context.client.cancelQueries({ queryKey: ["posts"] });
+      onMutate: async (newPost) => {
+        await queryClient.cancelQueries({ queryKey: ["posts"] });
 
-        const previousPosts = context.client.getQueryData(["posts"]);
+        const previousPosts = queryClient.getQueryData(["posts"]);
+        const now = new Date();
 
         const post: PostData = {
           author: "You",
           content: newPost.content,
-          id: Date.now(),
+          id: now.getTime(),
           likes: 0,
           liked: false,
           title: newPost.title,
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: now,
+          updatedAt: now,
           ghost: true,
         };
 
         // optimistically add the post to the first page
-        context.client.setQueryData(
+        queryClient.setQueryData(
           ["posts"],
           (
             old: InfiniteData<{ posts: PostData[]; nextCursor?: Date | null }>,

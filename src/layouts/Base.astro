@@ -8,7 +8,7 @@ interface Props {
 
 const { title } = Astro.props;
 
-const prefferedTheme = Astro.cookies.get("theme")?.value as
+const preferredTheme = Astro.cookies.get("theme")?.value as
   | "light"
   | "dark"
   | undefined;
@@ -18,7 +18,7 @@ const prefferedTheme = Astro.cookies.get("theme")?.value as
 <html
   lang="en"
   class="h-full bg-gray-200 dark:bg-gray-900"
-  {...prefferedTheme ? { "data-theme": prefferedTheme } : {}}
+  {...preferredTheme ? { "data-theme": preferredTheme } : {}}
 >
   <head>
     <meta charset="UTF-8" />
@@ -30,7 +30,7 @@ const prefferedTheme = Astro.cookies.get("theme")?.value as
     <title>{title}</title>
     <slot name="head" />
     {
-      !prefferedTheme && (
+      !preferredTheme && (
         <script is:inline>
           const local = localStorage.getItem("theme");
           const savedTheme = local ?? (window.matchMedia("(prefers-color-scheme: dark)").matches
