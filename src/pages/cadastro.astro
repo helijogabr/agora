@@ -2,7 +2,7 @@
 import { actions } from "astro:actions";
 import Layout from "../layouts/Layout.astro";
 
-const result = Astro.getActionResult(actions.loginForm);
+const result = Astro.getActionResult(actions.createUserForm);
 
 if (result && !result.error) {
   return Astro.redirect(result.data.redirect || "/");
@@ -11,12 +11,22 @@ if (result && !result.error) {
 
 <Layout>
   <main class="flex min-h-screen flex-col items-center justify-center">
-    <form method="POST" action={actions.loginForm} class="flex flex-col gap-2">
+    <form method="POST" action={actions.createUserForm} class="flex flex-col gap-2">
       <label>
         Username:
         <input
           type="text"
           name="username"
+          required
+          class="rounded border border-gray-300"
+        />
+      </label>
+      <br>
+      <label>
+        Cidade:
+        <input
+          type="text"
+          name="cidade"
           required
           class="rounded border border-gray-300"
         />
@@ -33,27 +43,16 @@ if (result && !result.error) {
       </label>
       <br />
       <button type="submit" class="rounded border border-gray-300 bg-gray-200"
-        >Login</button
+        >Cadastrar</button
       >
     </form>
 
-    <div class="mt-4 flex flex-col items-center gap-2">
+    <div>
       {
         result && result.error && (
-          <p class="text-red-600">
-            {result.error.code === "NOT_FOUND"
-              ? "Usuário não encontrado. "
-              : result.error.message}
-            {result.error.code === "NOT_FOUND" && (
-              <a href="/cadastro" class="ml-1 text-blue-600 underline">
-                Cadastre-se
-              </a>
-            )}
-          </p>
+          <p style={{ color: "red" }}>{result.error.message}</p>
         )
       }
-      <a href="/cadastro" class="rounded border border-gray-300 bg-gray-200">
-        Criar conta</a>
     </div>
   </main>
 </Layout>
