@@ -1,0 +1,65 @@
+import { actions } from "astro:actions";
+import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
+import { queryClient } from "@/query_client";
+import type { PostData } from "./Feed";
+
+type Props = {
+  id: PostData["id"];
+  liked: boolean;
+  likes: number;
+};
+
+export default function PostBar({ id, liked, likes }: Props) {
+  const likePost = useMutation(
+    {
+      mutationFn: actions.likePost.orThrow,
+      onMutate: async ({ postId, liked }) => {
+        await queryClient.cancelQueries({ queryKey: ["posts"] });
+
+        setIsLiked(liked);
+        setLikeCount((count) => count + (liked ? 1 : -1));
+
+        const previousPosts = queryClient.getQueryData(["posts"]);
+
+        return { previousPosts, postId, liked };
+      },
+      onSuccess: (data) => {
+        setIsLiked(data.isLiked);
+        setLikeCount(data.likes);
+      },
+      onError: (_, _1, onMutateResult) => {
+        setIsLiked(liked);
+        setLikeCount(likes);
+        queryClient.setQueryData(
+          ["posts"],
+          () => onMutateResult?.previousPosts,
+        );
+      },
+      onSettled: () => {
+        queryClient.invalidateQueries({ queryKey: ["posts"] });
+      },
+    },
+    queryClient,
+  );
+
+  const [isLiked, setIsLiked] = useState(liked);
+  const [likeCount, setLikeCount] = useState(likes);
+
+  return (
+    <div>
+      <button
+        type="button"
+        disabled={likePost.isPending}
+        className="cursor-pointer rounded bg-gray-200 p-0.5 px-1 text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-700 dark:text-gray-300"
+        onClick={() => likePost.mutate({ postId: id, liked: !isLiked })}
+      >
+        {isLiked ? <span>Unlike</span> : <strong>Like</strong>}
+      </button>
+
+      <span className="ml-2 text-sm text-gray-500">
+        {likeCount} {likeCount === 1 ? "like" : "likes"}
+      </span>
+    </div>
+  );
+}

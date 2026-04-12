@@ -14,6 +14,10 @@ import {
 } from "astro:db";
 import { z } from "astro/zod";
 
+async function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export const getPosts = defineAction({
   input: z.object({
     limit: z.int().nonnegative().max(50).default(10),
@@ -24,6 +28,10 @@ export const getPosts = defineAction({
       .optional(),
   }),
   handler: async ({ cursor, limit }, { session }) => {
+    if (import.meta.env.DEV) {
+      await sleep(1000);
+    }
+
     const user = await session?.get("userId");
 
     if (!user) {
@@ -93,6 +101,10 @@ export const createPost = defineAction({
     content: z.string().trim().nonempty(),
   }),
   handler: async ({ title, content }, { session }) => {
+    if (import.meta.env.DEV) {
+      await sleep(1000);
+    }
+
     const userId = await session?.get("userId");
 
     if (!userId) {
@@ -130,6 +142,10 @@ export const likePost = defineAction({
     liked: z.boolean(),
   }),
   handler: async ({ postId, liked }, { session }) => {
+    if (import.meta.env.DEV) {
+      await sleep(500);
+    }
+
     const userId = await session?.get("userId");
 
     if (!userId) {

@@ -1,40 +1,102 @@
 import { actions } from "astro:actions";
-import { useMutation } from "@tanstack/react-query";
+import { type InfiniteData, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { queryClient } from "@/query_client";
+import type { PostData } from "./Feed";
 
 export default function NewPost() {
-  const addPost = useMutation(
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+
+  const { mutate, isPending } = useMutation(
     {
       mutationFn: actions.createPost.orThrow,
-      onSuccess: (_, _1, _2, context) => {
-        context.client.invalidateQueries({ queryKey: ["posts"] });
+      onMutate: async (newPost) => {
+        await queryClient.cancelQueries({ queryKey: ["posts"] });
 
+        const previousPosts = queryClient.getQueryData(["posts"]);
+        const now = new Date();
+
+        const post: PostData = {
+          author: "You",
+          content: newPost.content,
+          id: now.getTime(),
+          likes: 0,
+          liked: false,
+          title: newPost.title,
+          createdAt: now,
+          updatedAt: now,
+          ghost: true,
+        };
+
+        // optimistically add the post to the first page
+        queryClient.setQueryData(
+          ["posts"],
+          (
+            old: InfiniteData<{ posts: PostData[]; nextCursor?: Date | null }>,
+          ) => {
+            if (!old) {
+              return {
+                pages: [{ posts: [post], nextCursor: null }],
+                pageParams: [null],
+              };
+            }
+
+            const updatedFirstPagePosts = [
+              post,
+              ...(old.pages[0]?.posts ?? []),
+            ];
+
+            return {
+              ...old,
+              pages: [
+                {
+                  ...(old.pages[0] ?? { nextCursor: null }),
+                  posts: updatedFirstPagePosts,
+                },
+                ...(old?.pages?.slice(1) ?? []),
+              ],
+              pageParams: old.pageParams ?? [null],
+            };
+          },
+        );
+
+        return { previousPosts, newPost: post };
+      },
+      onSuccess: () => {
         setTitle("");
         setContent("");
+      },
+      onError: (_, _1, onMutateResult) => {
+        if (onMutateResult?.previousPosts) {
+          queryClient.setQueryData(
+            ["posts"],
+            () => onMutateResult?.previousPosts,
+          );
+        }
+      },
+      onSettled: () => {
+        queryClient.invalidateQueries({ queryKey: ["posts"] });
       },
     },
     queryClient,
   );
 
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-
-  const isPending = addPost.isPending;
-
   return (
     <form
-      className={`flex flex-col gap-2 ${isPending && "opacity-50"}`}
+      className={`flex flex-col items-center gap-2 ${isPending ? "opacity-50" : ""}`}
       aria-disabled={isPending}
       onSubmit={(e) => {
         e.preventDefault();
-        addPost.mutate({ title, content });
+        if (isPending || !title.trim() || !content.trim()) return;
+        mutate({ title: title.trim(), content: content.trim() });
       }}
     >
       <input
         type="text"
         name="title"
         placeholder="Title"
+        autoComplete="off"
         value={title}
         disabled={isPending}
         onChange={(e) => setTitle(e.target.value)}
@@ -42,11 +104,16 @@ export default function NewPost() {
       <textarea
         name="content"
         placeholder="Content"
+        autoComplete="off"
         value={content}
         disabled={isPending}
         onChange={(e) => setContent(e.target.value)}
       />
-      <button type="submit" disabled={isPending}>
+      <button
+        type="submit"
+        disabled={isPending || !title.trim() || !content.trim()}
+        className={`w-fit cursor-pointer rounded bg-gray-300 px-2 py-1 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-700`}
+      >
         Create Post
       </button>
     </form>

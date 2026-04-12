@@ -1,0 +1,67 @@
+---
+import { Icon } from "astro-icon/components";
+import ThemeToggle from "./ThemeToggle";
+
+const urls = {
+  Home: "/",
+  Login: "/login",
+};
+
+const current = Astro.url.pathname;
+const username = await Astro.session?.get("username");
+
+const preferredTheme = Astro.cookies.get("theme")?.value as
+  | "light"
+  | "dark"
+  | undefined;
+---
+
+<nav
+  class="m-0 flex items-center justify-between bg-gray-400 p-4 dark:bg-gray-800"
+  transition:name="nav"
+>
+  <ul class="m-0 flex gap-4">
+    {
+      Object.entries(urls).map(([name, url]) => (
+        <li>
+          {url === current ? (
+            <span class="cursor-default rounded bg-gray-300 px-2 py-1 dark:bg-gray-700">
+              {name}
+            </span>
+          ) : (
+            <a
+              href={url}
+              class="rounded px-2 py-1 hover:bg-gray-300 dark:hover:bg-gray-700"
+              data-astro-prefetch="load"
+            >
+              {name}
+            </a>
+          )}
+        </li>
+      ))
+    }
+  </ul>
+
+  <div class="flex items-center gap-4">
+    {
+      username ? (
+        <div class="flex cursor-default items-center gap-2">
+          <Icon name="mdi:account" />
+          <span>
+            Logged in as <strong>{username}</strong>
+          </span>
+        </div>
+      ) : (
+        <a
+          href="/login"
+          class="rounded px-2 py-1 hover:bg-gray-300 dark:hover:bg-gray-700"
+          data-astro-prefetch="load"
+        >
+          You are not logged in
+        </a>
+      )
+    }
+
+    <ThemeToggle defaultTheme={preferredTheme} client:idle />
+  </div>
+</nav>
