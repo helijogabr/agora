@@ -2,11 +2,14 @@ import { actions } from "astro:actions";
 import { type InfiniteData, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { queryClient } from "@/query_client";
+import { getUser } from "@/userStore";
 import type { PostData } from "./Feed";
 
 export default function NewPost() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+
+  const user = getUser();
 
   const { mutate, isPending } = useMutation(
     {
@@ -18,7 +21,7 @@ export default function NewPost() {
         const now = new Date();
 
         const post: PostData = {
-          author: "You",
+          author: user?.name || "Unknown",
           content: newPost.content,
           id: now.getTime(),
           likes: 0,

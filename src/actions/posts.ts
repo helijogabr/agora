@@ -9,7 +9,6 @@ import {
   Likes,
   lt,
   Post,
-  sql,
   User,
 } from "astro:db";
 import { z } from "astro/zod";
@@ -23,37 +22,16 @@ export const getPosts = defineAction({
     limit: z.int().nonnegative().max(50).default(10),
     cursor: z
       .union([z.date(), z.iso.datetime()])
-      .transform((value) => value ? new Date(value) : value)
+      .transform((value) => (value ? new Date(value) : value))
       .nullable()
       .optional(),
   }),
-  handler: async ({ cursor, limit }, { session }) => {
+  handler: async ({ cursor, limit }, { locals }) => {
     if (import.meta.env.DEV) {
       await sleep(1000);
     }
 
-    const user = await session?.get("userId");
-
-    if (!user) {
-      throw new ActionError({
-        code: "UNAUTHORIZED",
-        message: "Você deve estar logado para visualizar os posts.",
-      });
-    }
-
-    if (import.meta.env.DEV) {
-      const posts = await db
-        .select({
-          updatedAt: Post.updatedAt,
-          id: Post.id,
-          unix: sql<number>`strftime('%s', ${Post.updatedAt})`,
-        })
-        .from(Post)
-        .orderBy(desc(sql`${Post.updatedAt}`))
-        .all();
-      console.table(posts);
-      console.log(cursor);
-    }
+    const user = locals.user;
 
     const posts = await db
       .select({
@@ -68,7 +46,7 @@ export const getPosts = defineAction({
           db
             .select()
             .from(Likes)
-            .where(and(eq(Likes.user, user), eq(Likes.post, Post.id))),
+            .where(and(eq(Likes.user, user.id), eq(Likes.post, Post.id))),
         ).mapWith((exists) => Boolean(+exists)),
       })
       .from(Post)
@@ -78,10 +56,6 @@ export const getPosts = defineAction({
       .orderBy(desc(Post.updatedAt))
       .groupBy(Post.id, User.id)
       .limit(limit + 1);
-
-    if (import.meta.env.DEV) {
-      console.log(posts);
-    }
 
     const extra = posts.length > limit ? posts.pop() : undefined;
     const last = posts.at(-1);
@@ -100,19 +74,12 @@ export const createPost = defineAction({
     title: z.string().trim().nonempty(),
     content: z.string().trim().nonempty(),
   }),
-  handler: async ({ title, content }, { session }) => {
+  handler: async ({ title, content }, { locals }) => {
     if (import.meta.env.DEV) {
       await sleep(1000);
     }
 
-    const userId = await session?.get("userId");
-
-    if (!userId) {
-      throw new ActionError({
-        code: "UNAUTHORIZED",
-        message: "Você deve estar logado para criar um post.",
-      });
-    }
+    const { id: userId } = locals.user;
 
     const res = await db.insert(Post).values({
       title,
@@ -136,24 +103,51 @@ export const createPost = defineAction({
   },
 });
 
+export const deletePost = defineAction({
+  input: z.object({
+    postId: z.number().int().positive(),
+  }),
+  handler: async ({ postId }, { locals }) => {
+    if (import.meta.env.DEV) {
+      await sleep(500);
+    }
+
+    const user = locals.user;
+
+    const where =
+      user.info.role === "admin"
+        ? eq(Post.id, postId)
+        : and(eq(Post.id, postId), eq(Post.author, user.id));
+
+    const res = await db
+      .delete(Post)
+      .where(where)
+      .then((res) => res.rowsAffected);
+
+    if (res === 0) {
+      throw new ActionError({
+        code: "NOT_FOUND",
+        message: "Post not found.",
+      });
+    }
+
+    return {
+      success: true,
+    };
+  },
+});
+
 export const likePost = defineAction({
   input: z.object({
     postId: z.number(),
     liked: z.boolean(),
   }),
-  handler: async ({ postId, liked }, { session }) => {
+  handler: async ({ postId, liked }, { locals }) => {
     if (import.meta.env.DEV) {
       await sleep(500);
     }
 
-    const userId = await session?.get("userId");
-
-    if (!userId) {
-      throw new ActionError({
-        code: "UNAUTHORIZED",
-        message: "Você deve estar logado para curtir um post.",
-      });
-    }
+    const { id: userId } = locals.user;
 
     let isLiked: boolean;
 

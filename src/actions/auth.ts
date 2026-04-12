@@ -11,7 +11,7 @@ export const createUserForm = defineAction({
     password: z.string().trim().nonempty(),
     city: z.string().trim().nonempty(),
   }),
-  handler: async (input, { session }) => {
+  handler: async (input, { session, url }) => {
     const { username, city, password } = input;
 
     const existingUser = await db
@@ -41,9 +41,26 @@ export const createUserForm = defineAction({
       });
     }
 
-    session?.set("userId", Number(result.lastInsertRowid));
+    session?.destroy();
+    session?.set("userId", Number(result.lastInsertRowid), {
+      ttl: 1000 * 60 * 60 * 24, // 1 day
+    });
 
-    return { success: true, redirect: "/login" };
+    session?.set(
+      "user",
+      {
+        name: username,
+        city,
+      },
+      {
+        ttl: 1000 * 60 * 60 * 24, // 1 day
+      },
+    );
+
+    return {
+      success: true,
+      redirect: url.searchParams.get("return") || undefined,
+    };
   },
 });
 
@@ -68,6 +85,8 @@ export const loginForm = defineAction({
         id: User.id,
         name: User.name,
         password: User.password,
+        city: User.city,
+        role: User.role,
       })
       .from(User)
       .where(eq(User.name, username))
@@ -94,20 +113,47 @@ export const loginForm = defineAction({
     session?.set("userId", Number(user.id), {
       ttl: 1000 * 60 * 60 * 24, // 1 day
     });
-    session?.set("username", username, {
-      ttl: 1000 * 60 * 60 * 24, // 1 day
-    });
+
+    session?.set(
+      "user",
+      {
+        name: user.name,
+        city: user.city,
+        role: user.role ?? undefined,
+      },
+      {
+        ttl: 1000 * 60 * 60 * 24, // 1 day
+      },
+    );
 
     return {
       success: true,
+      role: user.role ?? undefined,
       redirect: url.searchParams.get("return") || undefined,
     };
   },
 });
 
-export const logout = defineAction({
+export const whoAmI = defineAction({
   handler: async (_input, { session }) => {
+    const user = await session?.get("user");
+
+    if (!user) {
+      throw new ActionError({
+        code: "UNAUTHORIZED",
+        message: "You are not logged in.",
+      });
+    }
+
+    return user;
+  },
+});
+
+export const logout = defineAction({
+  handler: async (_input, { session, cookies }) => {
     session?.destroy();
+    cookies.delete("hasCache", { path: "/" });
+
     return {
       success:
         import.meta.env.PROD || (await session?.get("userId")) === undefined,
