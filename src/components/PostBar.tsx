@@ -54,7 +54,7 @@ export default function PostBar({ id, liked, likes }: Props) {
         className="cursor-pointer rounded bg-gray-200 p-0.5 px-1 text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-700 dark:text-gray-300"
         onClick={() => likePost.mutate({ postId: id, liked: !isLiked })}
       >
-        {isLiked ? <span>Unlike</span> : <strong>Like</strong>}
+        {isLiked ? <span>Descurtir</span> : <strong>Curtir</strong>}
       </button>
 
       <span className="ml-2 text-sm text-gray-500">

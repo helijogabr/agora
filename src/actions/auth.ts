@@ -24,7 +24,7 @@ export const createUserForm = defineAction({
     if (existingUser) {
       throw new ActionError({
         code: "CONFLICT",
-        message: "Username already exists",
+        message: "Nome de usuário já existe. Por favor, escolha outro.",
       });
     }
 
@@ -37,7 +37,7 @@ export const createUserForm = defineAction({
     if (!result.lastInsertRowid) {
       throw new ActionError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to create user",
+        message: "Falha ao criar usuário. Por favor, tente novamente.",
       });
     }
 
