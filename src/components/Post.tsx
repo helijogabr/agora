@@ -35,6 +35,7 @@ function Post({
         id={id}
         liked={liked}
         likes={likes}
+        author={author}
       />
     </div>
   );

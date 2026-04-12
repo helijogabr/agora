@@ -8,7 +8,7 @@ const urls = {
 };
 
 const current = Astro.url.pathname;
-const username = await Astro.session?.get("username");
+const user = Astro.locals.user;
 
 const preferredTheme = Astro.cookies.get("theme")?.value as
   | "light"
@@ -44,11 +44,11 @@ const preferredTheme = Astro.cookies.get("theme")?.value as
 
   <div class="flex items-center gap-4">
     {
-      username ? (
+      user?.name ? (
         <div class="flex cursor-default items-center gap-2">
           <Icon name="mdi:account" />
           <span>
-            Logged in as <strong>{username}</strong>
+            Logged in as <strong>{user.name}</strong>
           </span>
         </div>
       ) : (

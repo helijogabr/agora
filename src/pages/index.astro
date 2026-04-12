@@ -4,18 +4,8 @@ import Feed from "@components/Feed";
 import NewPost from "@components/NewPost";
 import Layout from "@layouts/Layout.astro";
 
-if (!(await Astro.session?.get("userId"))) {
-  const returnTo = Astro.url.pathname.trim();
-
-  if (returnTo && returnTo !== "/" && returnTo !== "/login") {
-    return Astro.redirect(`/login?return=${encodeURIComponent(returnTo)}`);
-  } else {
-    return Astro.redirect("/login");
-  }
-}
-
 const { data: posts, error } = await Astro.callAction(actions.getPosts, {
-  limit: 2
+  limit: 2,
 });
 ---
 

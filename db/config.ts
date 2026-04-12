@@ -7,7 +7,11 @@ const User = defineTable({
       unique: true,
     }),
     password: column.text(),
-    city: column.text()
+    city: column.text(),
+    role: column.text({
+      enum: ["admin"],
+      optional: true
+    })
   },
 });
 
