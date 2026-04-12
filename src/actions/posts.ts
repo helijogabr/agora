@@ -33,8 +33,6 @@ export const getPosts = defineAction({
 
     const user = locals.user;
 
-    console.log("LOCAL", locals);
-
     const posts = await db
       .select({
         id: Post.id,

@@ -1,12 +1,8 @@
 ---
-import { session } from "@/userStore";
-
 const hasCache = Astro.cookies.get("hasCache")?.value;
 const user = Astro.locals.user?.info;
 
 const invalidate = user && (!hasCache || hasCache !== user.name);
-console.log("AuthGate", { user, hasCache, invalidate });
-console.log("Store", session?.getStore());
 
 if (invalidate && user) {
   Astro.cookies.set("hasCache", user.name, {

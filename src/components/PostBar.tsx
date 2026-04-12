@@ -89,8 +89,6 @@ export default function PostBar({ id, liked, likes, author }: Props) {
   const [isLiked, setIsLiked] = useState(liked);
   const [likeCount, setLikeCount] = useState(likes);
 
-  console.log(user, user?.name === author || user?.role === "admin");
-
   return (
     <div className="flex items-center justify-between">
       <div>
