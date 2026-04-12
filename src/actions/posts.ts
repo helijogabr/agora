@@ -37,7 +37,7 @@ export const getPosts = defineAction({
     if (!user) {
       throw new ActionError({
         code: "UNAUTHORIZED",
-        message: "You must be logged in to view posts.",
+        message: "Você deve estar logado para visualizar os posts.",
       });
     }
 
@@ -110,7 +110,7 @@ export const createPost = defineAction({
     if (!userId) {
       throw new ActionError({
         code: "UNAUTHORIZED",
-        message: "You must be logged in to create a post.",
+        message: "Você deve estar logado para criar um post.",
       });
     }
 
@@ -125,7 +125,7 @@ export const createPost = defineAction({
     if (!res.lastInsertRowid) {
       throw new ActionError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to create post.",
+        message: "Falha ao criar post.",
       });
     }
 
@@ -151,7 +151,7 @@ export const likePost = defineAction({
     if (!userId) {
       throw new ActionError({
         code: "UNAUTHORIZED",
-        message: "You must be logged in to like a post.",
+        message: "Você deve estar logado para curtir um post.",
       });
     }
 
