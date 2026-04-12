@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci-pipeline:
+    env:
+      HAS_DB_SECRETS: ${{ secrets.ASTRO_DB_APP_TOKEN_READONLY != '' }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          version: "10"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Astro Sync
+        run: pnpm astro sync
+
+      - name: Biome linting
+        run: pnpm biome lint
+
+      - name: Astro check
+        run: pnpm astro check
+
+      - name: TypeScript type checking
+        run: pnpm tsc --noEmit
+
+      - name: Astro DB check
+        if: env.HAS_DB_SECRETS == 'true'
+        run: pnpm astro db verify
+        env:
+          ASTRO_DB_APP_TOKEN: ${{ secrets.ASTRO_DB_APP_TOKEN_READONLY }}
+          ASTRO_DB_REMOTE_URL: ${{ secrets.ASTRO_DB_REMOTE_URL }}
+
+      - name: Run unit tests
+        run: pnpm vitest run --passWithNoTests
+
+      - name: Compiling test
+        if: env.HAS_DB_SECRETS == 'true'
+        run: pnpm astro build --remote
+        env:
+          ASTRO_DB_APP_TOKEN: ${{ secrets.ASTRO_DB_APP_TOKEN_READONLY }}
+          ASTRO_DB_REMOTE_URL: ${{ secrets.ASTRO_DB_REMOTE_URL }}
