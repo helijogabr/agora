@@ -2,16 +2,20 @@
 import { actions } from "astro:actions";
 import Layout from "../layouts/Layout.astro";
 
-const result = Astro.getActionResult(actions.loginForm);
+const result = Astro.getActionResult(actions.createUserForm);
 
 if (result && !result.error) {
   return Astro.redirect(result.data.redirect || "/");
 }
 ---
 
-<Layout title="Login">
+<Layout title="Cadastro">
   <main class="flex flex-1 flex-col items-center justify-center">
-    <form method="POST" action={actions.loginForm} class="flex flex-col gap-4">
+    <form
+      method="POST"
+      action={actions.createUserForm}
+      class="flex flex-col gap-4"
+    >
       <label class="flex justify-between gap-2">
         Username:
         <input
@@ -30,32 +34,27 @@ if (result && !result.error) {
           class="rounded border border-gray-300"
         />
       </label>
+      <label class="flex justify-between gap-2">
+        Cidade:
+        <input
+          type="text"
+          name="city"
+          required
+          class="rounded border border-gray-300"
+        />
+      </label>
       <button
         type="submit"
         class="mt-2 cursor-pointer rounded border border-gray-300 bg-gray-200 p-1 hover:bg-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
-        >Login</button
-      >
-      <a
-        href="/cadastro"
-        class="cursor-pointer rounded border border-gray-300 bg-gray-200 p-1 text-center hover:bg-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
-      >
-        Criar conta</a
+        >Cadastrar</button
       >
     </form>
 
-    <div class="mt-4 flex flex-col items-center gap-2">
+    <div>
       {
-        !!result?.error &&
-          (result.error.code === "NOT_FOUND" ? (
-            <p class="text-red-600">
-              Usuário não encontrado.
-              <a href="/cadastro" class="ml-1 text-blue-600 underline">
-                Cadastre-se
-              </a>
-            </p>
-          ) : (
-            <p class="text-red-600">Erro: {result.error.message}</p>
-          ))
+        result && result.error && (
+          <p style={{ color: "red" }}>{result.error.message}</p>
+        )
       }
     </div>
   </main>
