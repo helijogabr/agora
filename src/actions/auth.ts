@@ -7,9 +7,9 @@ import bcrypt from "bcrypt";
 export const createUserForm = defineAction({
   accept: "form",
   input: z.object({
-    username: z.string().trim().toLowerCase(),
-    password: z.string().trim(),
-    city: z.string().trim(),
+    username: z.string().trim().toLowerCase().nonempty(),
+    password: z.string().trim().nonempty(),
+    city: z.string().trim().nonempty(),
   }),
   handler: async (input, { session }) => {
     const { username, city, password } = input;
@@ -50,8 +50,8 @@ export const createUserForm = defineAction({
 export const loginForm = defineAction({
   accept: "form",
   input: z.object({
-    username: z.string().trim().toLowerCase(),
-    password: z.string().trim(),
+    username: z.string().trim().toLowerCase().nonempty(),
+    password: z.string().trim().nonempty(),
   }),
   handler: async (input, { session, url }) => {
     const { username, password } = input;
@@ -108,6 +108,9 @@ export const loginForm = defineAction({
 export const logout = defineAction({
   handler: async (_input, { session }) => {
     session?.destroy();
-    return { success: (await session?.get("userId")) === undefined };
+    return {
+      success:
+        import.meta.env.PROD || (await session?.get("userId")) === undefined,
+    };
   },
 });
