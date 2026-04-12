@@ -98,7 +98,7 @@ export default function NewPost() {
       <input
         type="text"
         name="title"
-        placeholder="Title"
+        placeholder="Título"
         autoComplete="off"
         value={title}
         disabled={isPending}
@@ -106,7 +106,7 @@ export default function NewPost() {
       />
       <textarea
         name="content"
-        placeholder="Content"
+        placeholder="Conteúdo"
         autoComplete="off"
         value={content}
         disabled={isPending}
@@ -117,7 +117,7 @@ export default function NewPost() {
         disabled={isPending || !title.trim() || !content.trim()}
         className={`w-fit cursor-pointer rounded bg-gray-300 px-2 py-1 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-700`}
       >
-        Create Post
+        Criar Postagem
       </button>
     </form>
   );

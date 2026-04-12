@@ -24,7 +24,7 @@ function Post({
     >
       <h2 className="text-xl font-bold">{title}</h2>
       <p className="text-sm text-gray-500">
-        By <strong>{author}</strong> on {new Date(createdAt).toLocaleString()}
+        Por <strong>{author}</strong> em {new Date(createdAt).toLocaleString()}
         {updatedAt !== createdAt &&
           ` (edited on ${new Date(updatedAt).toLocaleString()})`}
       </p>

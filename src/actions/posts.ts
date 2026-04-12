@@ -92,7 +92,7 @@ export const createPost = defineAction({
     if (!res.lastInsertRowid) {
       throw new ActionError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to create post.",
+        message: "Falha ao criar post.",
       });
     }
 

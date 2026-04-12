@@ -50,7 +50,7 @@ export default function ThemeToggle({
       onClick={toggleTheme}
       id="theme-toggle"
     >
-      {theme === "light" ? "Light" : "Dark"}
+      {theme === "light" ? "Claro" : "Escuro"}
     </button>
   );
 }

@@ -64,10 +64,10 @@ export default function Feed({
         onClick={() => hasNextPage && fetchNextPage()}
       >
         {isLoading || isFetching
-          ? "Loading..."
+          ? "Carregando..."
           : hasNextPage
-            ? "Load more"
-            : "No more posts"}
+            ? "Carregar mais posts"
+            : "Não tem mais posts para carregar"}
       </button>
     </div>
   );

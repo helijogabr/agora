@@ -3,12 +3,12 @@ import { Icon } from "astro-icon/components";
 import ThemeToggle from "./ThemeToggle";
 
 const urls = {
-  Home: "/",
-  Login: "/login",
+  "Página Inicial": "/",
+  Entrar: "/login",
 };
 
 const current = Astro.url.pathname;
-const user = Astro.locals.user;
+const user = Astro.locals.user?.info;
 
 const preferredTheme = Astro.cookies.get("theme")?.value as
   | "light"
@@ -57,7 +57,7 @@ const preferredTheme = Astro.cookies.get("theme")?.value as
           class="rounded px-2 py-1 hover:bg-gray-300 dark:hover:bg-gray-700"
           data-astro-prefetch="load"
         >
-          You are not logged in
+          Você não está logado
         </a>
       )
     }
