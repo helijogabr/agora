@@ -6,16 +6,16 @@ import bcrypt from "bcrypt";
 export default async function seed() {
   await db.insert(User).values([
     {
-      name: "alice",
       id: 1,
+      name: "alice",
       password: await bcrypt.hash("123", 10),
-      cidade: "São Paulo",
+      city: "São Paulo",
     },
     {
-      name: "bob",
       id: 2,
+      name: "bob",
       password: await bcrypt.hash("456", 10),
-      cidade: "Rio de Janeiro",
+      city: "Rio de Janeiro",
     },
   ]);
 

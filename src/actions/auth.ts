@@ -8,11 +8,11 @@ export const createUserForm = defineAction({
   accept: "form",
   input: z.object({
     username: z.string().trim().toLowerCase(),
-    cidade: z.string().trim(),
     password: z.string().trim(),
+    city: z.string().trim(),
   }),
   handler: async (input, { session }) => {
-    const { username, cidade, password } = input;
+    const { username, city, password } = input;
 
     const existingUser = await db
       .select()
@@ -32,7 +32,7 @@ export const createUserForm = defineAction({
 
     const result = await db
       .insert(User)
-      .values({ name: username, password: hashed, cidade });
+      .values({ name: username, password: hashed, city });
 
     if (!result.lastInsertRowid) {
       throw new ActionError({

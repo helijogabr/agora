@@ -9,10 +9,14 @@ if (result && !result.error) {
 }
 ---
 
-<Layout>
-  <main class="flex min-h-screen flex-col items-center justify-center">
-    <form method="POST" action={actions.createUserForm} class="flex flex-col gap-2">
-      <label>
+<Layout title="Cadastro">
+  <main class="flex flex-1 flex-col items-center justify-center">
+    <form
+      method="POST"
+      action={actions.createUserForm}
+      class="flex flex-col gap-4"
+    >
+      <label class="flex justify-between gap-2">
         Username:
         <input
           type="text"
@@ -21,18 +25,7 @@ if (result && !result.error) {
           class="rounded border border-gray-300"
         />
       </label>
-      <br>
-      <label>
-        Cidade:
-        <input
-          type="text"
-          name="cidade"
-          required
-          class="rounded border border-gray-300"
-        />
-      </label>
-      <br />
-      <label>
+      <label class="flex justify-between gap-2">
         Password:
         <input
           type="password"
@@ -41,8 +34,18 @@ if (result && !result.error) {
           class="rounded border border-gray-300"
         />
       </label>
-      <br />
-      <button type="submit" class="rounded border border-gray-300 bg-gray-200"
+      <label class="flex justify-between gap-2">
+        Cidade:
+        <input
+          type="text"
+          name="city"
+          required
+          class="rounded border border-gray-300"
+        />
+      </label>
+      <button
+        type="submit"
+        class="mt-2 cursor-pointer rounded border border-gray-300 bg-gray-200 p-1 hover:bg-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
         >Cadastrar</button
       >
     </form>
