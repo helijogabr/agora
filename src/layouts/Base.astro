@@ -27,10 +27,10 @@ const preferredTheme = Astro.cookies.get("theme")?.value as
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" />
     <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    {import.meta.env.DEV && <script is:inline crossorigin="anonymous" src="//unpkg.com/react-scan/dist/auto.global.js" />}
     <ClientRouter />
     <AuthGate />
-    <title>{title}</title>
-    <slot name="head" />
     {
       !preferredTheme && (
         <script is:inline>
@@ -52,8 +52,10 @@ const preferredTheme = Astro.cookies.get("theme")?.value as
         </script>
       )
     }
+    <slot name="head" />
   </head>
-  <body class="flex h-full flex-col dark:text-gray-300">
+
+  <body class="flex transition-colors duration-250 ease-in-out h-full flex-col dark:text-gray-300">
     <slot />
   </body>
 </html>

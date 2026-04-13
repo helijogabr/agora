@@ -6,26 +6,21 @@ type User = {
   role?: string | undefined;
 };
 
-const ALS_KEY = Symbol.for("astro.user_session");
-
 type ALS = AsyncLocalStorage<App.Locals["user"]["info"] | undefined>;
 
-async function getSessionStore(): Promise<
-  ALS | undefined
-> {
+async function getSessionStore(): Promise<ALS | undefined> {
   if (!import.meta.env.SSR) return undefined;
 
   const { AsyncLocalStorage } = await import("node:async_hooks");
 
   if (import.meta.env.DEV) {
+    const ALS_KEY = Symbol.for("astro.user_session");
+
     if (!(ALS_KEY in globalThis)) {
-      (globalThis as unknown as Record<symbol, ALS>)[
-        ALS_KEY
-      ] = new AsyncLocalStorage<App.Locals["user"]["info"] | undefined>();
+      (globalThis as unknown as Record<symbol, ALS>)[ALS_KEY] =
+        new AsyncLocalStorage<App.Locals["user"]["info"] | undefined>();
     }
-    return (
-      globalThis as unknown as Record<symbol, ALS>
-    )[ALS_KEY];
+    return (globalThis as unknown as Record<symbol, ALS>)[ALS_KEY];
   }
 
   return new AsyncLocalStorage<App.Locals["user"]["info"] | undefined>();

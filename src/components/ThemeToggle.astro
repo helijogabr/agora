@@ -1,0 +1,44 @@
+---
+const theme =
+  (Astro.cookies.get("theme")?.value as "light" | "dark" | undefined) ??
+  "light";
+---
+
+<button
+  is="theme-toggle"
+  type="button"
+  class="cursor-pointer rounded bg-gray-400 px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800"
+>
+  {theme === "light" ? "Claro" : "Escuro"}
+</button>
+
+<script>
+  class ThemeToggle extends HTMLButtonElement {
+    constructor() {
+      super();
+
+      const root = document.documentElement;
+      const theme = root.dataset.theme === "light" ? "light" : "dark";
+      this.textContent = theme === "light" ? "Claro" : "Escuro";
+      root.dataset.theme = theme;
+
+      this.addEventListener("click", () => {
+        const root = document.documentElement;
+        const currentTheme = root.dataset.theme;
+        const newTheme = currentTheme === "light" ? "dark" : "light";
+        this.textContent = newTheme === "light" ? "Claro" : "Escuro";
+        root.dataset.theme = newTheme;
+
+        localStorage.setItem("theme", newTheme);
+        cookieStore.set({
+          name: "theme",
+          value: newTheme,
+          expires: Date.now() + 365 * 24 * 60 * 60 * 1000,
+          path: "/",
+        });
+      });
+    }
+  }
+
+  customElements.define("theme-toggle", ThemeToggle, { extends: "button" });
+</script>
