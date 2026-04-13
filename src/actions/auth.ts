@@ -10,8 +10,9 @@ export const createUserForm = defineAction({
     username: z.string().trim().toLowerCase().nonempty(),
     password: z.string().trim().nonempty(),
     city: z.string().trim().nonempty(),
+    redirect: z.string().optional(),
   }),
-  handler: async (input, { session, url }) => {
+  handler: async (input, { session, cookies, url }) => {
     const { username, city, password } = input;
 
     const existingUser = await db
@@ -42,6 +43,7 @@ export const createUserForm = defineAction({
     }
 
     session?.destroy();
+    cookies.delete("hasCache", { path: "/" });
     session?.set("userId", Number(result.lastInsertRowid), {
       ttl: 1000 * 60 * 60 * 24, // 1 day
     });
@@ -59,7 +61,7 @@ export const createUserForm = defineAction({
 
     return {
       success: true,
-      redirect: url.searchParams.get("return") || undefined,
+      redirect: input.redirect || url.searchParams.get("return") || undefined,
     };
   },
 });
@@ -69,16 +71,10 @@ export const loginForm = defineAction({
   input: z.object({
     username: z.string().trim().toLowerCase().nonempty(),
     password: z.string().trim().nonempty(),
+    redirect: z.string().optional(),
   }),
-  handler: async (input, { session, url }) => {
+  handler: async (input, { session, cookies, url }) => {
     const { username, password } = input;
-
-    if (!session) {
-      throw new ActionError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Session is not available",
-      });
-    }
 
     const user = await db
       .select({
@@ -109,6 +105,7 @@ export const loginForm = defineAction({
       });
     }
 
+    cookies.delete("hasCache", { path: "/" });
     session?.destroy();
     session?.set("userId", Number(user.id), {
       ttl: 1000 * 60 * 60 * 24, // 1 day
@@ -129,23 +126,14 @@ export const loginForm = defineAction({
     return {
       success: true,
       role: user.role ?? undefined,
-      redirect: url.searchParams.get("return") || undefined,
+      redirect: input.redirect || url.searchParams.get("return") || undefined,
     };
   },
 });
 
 export const whoAmI = defineAction({
-  handler: async (_input, { session }) => {
-    const user = await session?.get("user");
-
-    if (!user) {
-      throw new ActionError({
-        code: "UNAUTHORIZED",
-        message: "You are not logged in.",
-      });
-    }
-
-    return user;
+  handler: async (_input, { locals }) => {
+    return locals.user.info;
   },
 });
 

@@ -5,10 +5,8 @@ import { session } from "./userStore";
 const unprotectedPaths = new Set(["/login", "/register"]);
 
 const unprotectedActions = new Set([
-  actions.whoAmI.name,
   actions.createUserForm.name,
   actions.loginForm.name,
-  actions.logout.name,
 ]);
 
 export const onRequest = defineMiddleware(async (context, next) => {
@@ -33,7 +31,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   if (!userId || !user) {
     if (action) {
-      throw new Response("You must be logged in to perform this action.", {
+      throw new Response("Você precisa estar logado para realizar esta ação.", {
         status: 401,
       });
     }
@@ -50,8 +48,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   context.locals.user = {
     id: userId,
-    info: user
-  }
+    info: user,
+  };
 
   if (action) {
     return next();
@@ -70,5 +68,5 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return next();
   }
 
-  return session.run(context.locals, () => next());
+  return session.run(context.locals.user.info, () => next());
 });

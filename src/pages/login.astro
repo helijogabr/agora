@@ -2,6 +2,9 @@
 import { actions } from "astro:actions";
 import Layout from "../layouts/Layout.astro";
 
+const redirect = Astro.url.searchParams.get("return") ?? undefined;
+const returnTo = redirect ? `?return=${encodeURIComponent(redirect)}` : "";
+
 const result = Astro.getActionResult(actions.loginForm);
 
 if (result && !result.error) {
@@ -12,6 +15,7 @@ if (result && !result.error) {
 <Layout title="Login">
   <main class="flex flex-1 flex-col items-center justify-center">
     <form method="POST" action={actions.loginForm} class="flex flex-col gap-4">
+      <input type="hidden" name="redirect" value={redirect} />
       <label class="flex justify-between gap-2">
         Usuário:
         <input
@@ -36,7 +40,7 @@ if (result && !result.error) {
         >Entrar</button
       >
       <a
-        href="/cadastro"
+        href={`/register${returnTo}`}
         class="cursor-pointer rounded border border-gray-300 bg-gray-200 p-1 text-center hover:bg-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
       >
         Criar conta</a
@@ -49,7 +53,10 @@ if (result && !result.error) {
           (result.error.code === "NOT_FOUND" ? (
             <p class="text-red-600">
               Usuário não encontrado.
-              <a href="/cadastro" class="ml-1 text-blue-600 underline">
+              <a
+                href={`/register${returnTo}`}
+                class="ml-1 text-blue-600 underline"
+              >
                 Cadastre-se
               </a>
             </p>
