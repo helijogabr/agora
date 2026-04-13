@@ -2,6 +2,8 @@
 import { actions } from "astro:actions";
 import Layout from "../layouts/Layout.astro";
 
+const redirect = Astro.url.searchParams.get("return") ?? undefined;
+
 const result = Astro.getActionResult(actions.createUserForm);
 
 if (result && !result.error) {
@@ -16,6 +18,7 @@ if (result && !result.error) {
       action={actions.createUserForm}
       class="flex flex-col gap-4"
     >
+      <input type="hidden" name="redirect" value={redirect} />
       <label class="flex justify-between gap-2">
         Usuário:
         <input

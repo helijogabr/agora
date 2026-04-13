@@ -8,8 +8,10 @@ type User = {
 
 const ALS_KEY = Symbol.for("astro.user_session");
 
+type ALS = AsyncLocalStorage<App.Locals["user"]["info"] | undefined>;
+
 async function getSessionStore(): Promise<
-  AsyncLocalStorage<App.Locals> | undefined
+  ALS | undefined
 > {
   if (!import.meta.env.SSR) return undefined;
 
@@ -17,16 +19,16 @@ async function getSessionStore(): Promise<
 
   if (import.meta.env.DEV) {
     if (!(ALS_KEY in globalThis)) {
-      (globalThis as unknown as Record<symbol, AsyncLocalStorage<App.Locals>>)[
+      (globalThis as unknown as Record<symbol, ALS>)[
         ALS_KEY
-      ] = new AsyncLocalStorage<App.Locals>();
+      ] = new AsyncLocalStorage<App.Locals["user"]["info"] | undefined>();
     }
     return (
-      globalThis as unknown as Record<symbol, AsyncLocalStorage<App.Locals>>
+      globalThis as unknown as Record<symbol, ALS>
     )[ALS_KEY];
   }
 
-  return new AsyncLocalStorage<App.Locals>();
+  return new AsyncLocalStorage<App.Locals["user"]["info"] | undefined>();
 }
 
 export const session = import.meta.env.SSR
@@ -35,7 +37,7 @@ export const session = import.meta.env.SSR
 
 export function getUser(): User | undefined {
   if (import.meta.env.SSR) {
-    return session?.getStore()?.user?.info ?? undefined;
+    return session?.getStore() ?? undefined;
   }
 
   let user = (window as unknown as Record<string, unknown>).__USER__;
