@@ -1,19 +1,15 @@
 ---
 import { Icon } from "astro-icon/components";
-import ThemeToggle from "./ThemeToggle";
+import ThemeToggle from "./ThemeToggle.astro";
 
+// prettier-ignore
 const urls = {
   "Página Inicial": "/",
-  Entrar: "/login",
+  "Entrar": "/login",
 };
 
 const current = Astro.url.pathname;
 const user = Astro.locals.user?.info;
-
-const preferredTheme = Astro.cookies.get("theme")?.value as
-  | "light"
-  | "dark"
-  | undefined;
 ---
 
 <nav
@@ -62,6 +58,6 @@ const preferredTheme = Astro.cookies.get("theme")?.value as
       )
     }
 
-    <ThemeToggle defaultTheme={preferredTheme} client:idle />
+    <ThemeToggle />
   </div>
 </nav>

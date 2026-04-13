@@ -1,0 +1,38 @@
+---
+const theme = Astro.cookies.get("theme")?.value ?? "light";
+---
+
+<button
+  is="theme-toggle"
+  type="button"
+  class="cursor-pointer rounded bg-gray-400 px-3 py-2 dark:bg-gray-800"
+>
+  {theme === "light" ? "Claro" : "Escuro"}
+</button>
+
+<script>
+  class ThemeToggle extends HTMLButtonElement {
+    connectedCallback() {
+      const currentTheme =
+        document.documentElement.getAttribute("data-theme") ?? "light";
+      this.textContent = currentTheme === "light" ? "Claro" : "Escuro";
+
+      this.addEventListener("click", () => {
+        const root = document.documentElement;
+        const currentTheme = root.getAttribute("data-theme") ?? "light";
+        const newTheme = currentTheme === "light" ? "dark" : "light";
+
+        root.setAttribute("data-theme", newTheme);
+        this.textContent = newTheme === "light" ? "Claro" : "Escuro";
+
+        requestIdleCallback(() => {
+          localStorage.setItem("theme", newTheme);
+          document.cookie = `theme=${newTheme}; path=/; max-age=31536000; SameSite=Lax`;
+        });
+      });
+    }
+  }
+
+  if (!customElements.get("theme-toggle"))
+    customElements.define("theme-toggle", ThemeToggle, { extends: "button" });
+</script>

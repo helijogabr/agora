@@ -10,8 +10,8 @@ const User = defineTable({
     city: column.text(),
     role: column.text({
       enum: ["admin"],
-      optional: true
-    })
+      optional: true,
+    }),
   },
 });
 

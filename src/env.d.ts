@@ -17,6 +17,7 @@ declare namespace App {
         role?: "admin" | undefined;
       };
     };
+    invalidateCache?: boolean;
   }
 }
 
