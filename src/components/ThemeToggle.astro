@@ -6,7 +6,6 @@ const theme = Astro.cookies.get("theme")?.value ?? "light";
   is="theme-toggle"
   type="button"
   class="cursor-pointer rounded bg-gray-400 px-3 py-2 dark:bg-gray-800"
-  data-theme={theme}
 >
   {theme === "light" ? "Claro" : "Escuro"}
 </button>
@@ -22,11 +21,13 @@ const theme = Astro.cookies.get("theme")?.value ?? "light";
         root.setAttribute("data-theme", newTheme);
         this.textContent = newTheme === "light" ? "Claro" : "Escuro";
 
-        localStorage.setItem("theme", newTheme);
-        document.cookie = `theme=${newTheme}; path=/; max-age=31536000; SameSite=Lax`;
+        requestIdleCallback(() => {
+          localStorage.setItem("theme", newTheme);
+          document.cookie = `theme=${newTheme}; path=/; max-age=31536000; SameSite=Lax`;
+        });
       });
     }
-  } 
+  }
 
   customElements.define("theme-toggle", ThemeToggle, { extends: "button" });
 </script>

@@ -51,14 +51,17 @@ export const onRequest = defineMiddleware(async (context, next) => {
     info: user,
   };
 
-  if (action) {
-    return next();
-  }
+  if (context.request.method === "GET" && !action) {
+    const cookie = context.cookies.get("hasCache")?.value;
 
-  const cookie = context.cookies.get("hasCache")?.value;
+    if (cookie !== user.name) {
+      context.locals.invalidateCache = true;
+      
+      if (cookie) {
+        context.cookies.delete("hasCache", { path: "/" });
+      }
+    }
 
-  if (cookie && cookie !== user.name) {
-    context.cookies.delete("hasCache", { path: "/" });
   }
 
   if (!session) {

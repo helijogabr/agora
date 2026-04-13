@@ -39,10 +39,12 @@ const preferredTheme = Astro.cookies.get("theme")?.value as
             const savedTheme = local ?? (window.matchMedia("(prefers-color-scheme: dark)").matches
               ? "dark"
               : "light");
-
             document.documentElement.setAttribute("data-theme", savedTheme);
-            localStorage.setItem("theme", savedTheme);
-            document.cookie = `theme=${savedTheme}; path=/; max-age=31536000; SameSite=Lax`;
+
+            requestIdleCallback(() => {
+              localStorage.setItem("theme", savedTheme);
+              document.cookie = `theme=${savedTheme}; path=/; max-age=31536000; SameSite=Lax`;
+            })
           })()
         </script>
       )
