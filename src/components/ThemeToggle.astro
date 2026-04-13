@@ -33,5 +33,6 @@ const theme = Astro.cookies.get("theme")?.value ?? "light";
     }
   }
 
-  customElements.define("theme-toggle", ThemeToggle, { extends: "button" });
+  if (!customElements.get("theme-toggle"))
+    customElements.define("theme-toggle", ThemeToggle, { extends: "button" });
 </script>
