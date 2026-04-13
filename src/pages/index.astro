@@ -21,12 +21,19 @@ const { data: posts, error } = await Astro.callAction(actions.getPosts, {
 
 <Layout>
   <!-- centered bold text -->
-  <div class="flex flex-col items-center gap-4 py-8">
-    <h1 class="text-2xl font-bold">Agora</h1>
+  <div class="w-full h-full flex flex-row items-center">
+    <div class="w-2/5 h-full flex flex-col justify-around items-center border-2 border-gray-200">
+      <div class="h-1/2 w-lg flex flex-col justify-around items-center">
+        <h1 class="text-3xl font-bold">Cidade</h1>
+        <div class="h-5/6 w-full bg-green-500 border-3 rounded-2xl flex flex-col justify-center items-center"> MAPA </div>
+      </div>
+      <NewPost client:load />
+    </div>
+    
+    <div class="w-3/5 h-full overflow-scroll flex flex-col justify-center items-center border-2 border-gray-200">  
+      {error && <p class="error">{error.message}</p>}
+      {posts && <Feed {...posts} client:idle />}
+    </div>
 
-    <NewPost client:load />
-
-    {error && <p class="error">{error.message}</p>}
-    {posts && <Feed {...posts} client:idle />}
   </div>
 </Layout>
