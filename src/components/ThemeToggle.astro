@@ -1,44 +1,32 @@
 ---
-const theme =
-  (Astro.cookies.get("theme")?.value as "light" | "dark" | undefined) ??
-  "light";
+const theme = Astro.cookies.get("theme")?.value ?? "light";
 ---
 
 <button
   is="theme-toggle"
   type="button"
-  class="cursor-pointer rounded bg-gray-400 px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-800"
+  class="cursor-pointer rounded bg-gray-400 px-3 py-2 dark:bg-gray-800"
+  data-theme={theme}
 >
   {theme === "light" ? "Claro" : "Escuro"}
 </button>
 
 <script>
   class ThemeToggle extends HTMLButtonElement {
-    constructor() {
-      super();
-
-      const root = document.documentElement;
-      const theme = root.dataset.theme === "light" ? "light" : "dark";
-      this.textContent = theme === "light" ? "Claro" : "Escuro";
-      root.dataset.theme = theme;
-
+    connectedCallback() {
       this.addEventListener("click", () => {
         const root = document.documentElement;
-        const currentTheme = root.dataset.theme;
+        const currentTheme = root.getAttribute("data-theme") ?? "light";
         const newTheme = currentTheme === "light" ? "dark" : "light";
+
+        root.setAttribute("data-theme", newTheme);
         this.textContent = newTheme === "light" ? "Claro" : "Escuro";
-        root.dataset.theme = newTheme;
 
         localStorage.setItem("theme", newTheme);
-        cookieStore.set({
-          name: "theme",
-          value: newTheme,
-          expires: Date.now() + 365 * 24 * 60 * 60 * 1000,
-          path: "/",
-        });
+        document.cookie = `theme=${newTheme}; path=/; max-age=31536000; SameSite=Lax`;
       });
     }
-  }
+  } 
 
   customElements.define("theme-toggle", ThemeToggle, { extends: "button" });
 </script>

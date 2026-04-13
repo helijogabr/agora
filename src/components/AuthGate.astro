@@ -1,16 +1,19 @@
 ---
-const hasCache = Astro.cookies.get("hasCache")?.value;
 const user = Astro.locals.user?.info;
+let invalidate: boolean = false;
 
-const invalidate = user && (!hasCache || hasCache !== user.name);
+if (user) {
+  const hasCache = Astro.cookies.get("hasCache")?.value;
+  invalidate = !hasCache || hasCache !== user.name;
 
-if (invalidate && user) {
-  Astro.cookies.set("hasCache", user.name, {
-    expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-    path: "/",
-    httpOnly: false,
-    sameSite: "lax",
-  });
+  if (invalidate) {
+    Astro.cookies.set("hasCache", user.name, {
+      expires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+      path: "/",
+      httpOnly: false,
+      sameSite: "lax",
+    });
+  }
 }
 ---
 
