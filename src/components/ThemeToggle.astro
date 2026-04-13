@@ -13,6 +13,10 @@ const theme = Astro.cookies.get("theme")?.value ?? "light";
 <script>
   class ThemeToggle extends HTMLButtonElement {
     connectedCallback() {
+      const currentTheme =
+        document.documentElement.getAttribute("data-theme") ?? "light";
+      this.textContent = currentTheme === "light" ? "Claro" : "Escuro";
+
       this.addEventListener("click", () => {
         const root = document.documentElement;
         const currentTheme = root.getAttribute("data-theme") ?? "light";
