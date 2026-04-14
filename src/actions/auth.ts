@@ -31,9 +31,13 @@ export const createUserForm = defineAction({
 
     const hashed = await bcrypt.hash(password, 10);
 
-    const result = await db
-      .insert(User)
-      .values({ name: username, password: hashed, city });
+    const result = await db.insert(User).values({
+      name: username,
+      password: hashed,
+      city,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
     if (!result.lastInsertRowid) {
       throw new ActionError({
@@ -47,17 +51,6 @@ export const createUserForm = defineAction({
     session?.set("userId", Number(result.lastInsertRowid), {
       ttl: 1000 * 60 * 60 * 24, // 1 day
     });
-
-    session?.set(
-      "user",
-      {
-        name: username,
-        city,
-      },
-      {
-        ttl: 1000 * 60 * 60 * 24, // 1 day
-      },
-    );
 
     return {
       success: true,
@@ -75,6 +68,9 @@ export const loginForm = defineAction({
   }),
   handler: async (input, { session, cookies, url }) => {
     const { username, password } = input;
+
+    cookies.delete("hasCache", { path: "/" });
+    session?.destroy();
 
     const user = await db
       .select({
@@ -105,23 +101,9 @@ export const loginForm = defineAction({
       });
     }
 
-    cookies.delete("hasCache", { path: "/" });
-    session?.destroy();
     session?.set("userId", Number(user.id), {
       ttl: 1000 * 60 * 60 * 24, // 1 day
     });
-
-    session?.set(
-      "user",
-      {
-        name: user.name,
-        city: user.city,
-        role: user.role ?? undefined,
-      },
-      {
-        ttl: 1000 * 60 * 60 * 24, // 1 day
-      },
-    );
 
     return {
       success: true,

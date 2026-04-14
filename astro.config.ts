@@ -19,6 +19,23 @@ export default defineConfig({
     sitemap(),
     icon(),
   ],
+  i18n: {
+    defaultLocale: "pt-BR",
+    locales: ["pt-BR"],
+    routing: {
+      prefixDefaultLocale: false,
+    },
+  },
+  env: {
+    schema: {
+      "CACHE_VERSION": {
+        context: "server",
+        access: "public",
+        type: "number",
+        default: 1
+      },
+    }
+  },
   vite: {
     plugins: [tailwindcss()],
   },

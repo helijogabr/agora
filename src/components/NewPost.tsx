@@ -6,9 +6,6 @@ import { getUser } from "@/userStore";
 import type { PostData } from "./Feed";
 
 export default function NewPost() {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-
   const user = getUser();
 
   const { mutate, isPending } = useMutation(
@@ -85,12 +82,16 @@ export default function NewPost() {
     queryClient,
   );
 
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+
   return (
     <form
       className={`flex flex-col items-center gap-2 ${isPending ? "opacity-50" : ""}`}
       aria-disabled={isPending}
       onSubmit={(e) => {
         e.preventDefault();
+
         if (isPending || !title.trim() || !content.trim()) return;
         mutate({ title: title.trim(), content: content.trim() });
       }}
@@ -100,16 +101,16 @@ export default function NewPost() {
         name="title"
         placeholder="Título"
         autoComplete="off"
-        value={title}
         disabled={isPending}
+        value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
       <textarea
         name="content"
         placeholder="Conteúdo"
         autoComplete="off"
-        value={content}
         disabled={isPending}
+        value={content}
         onChange={(e) => setContent(e.target.value)}
       />
       <button

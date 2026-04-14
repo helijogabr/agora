@@ -1,44 +1,53 @@
-import { memo } from "react";
 import type { PostData } from "./Feed";
 import PostBar from "./PostBar";
 
 interface Props extends Omit<PostData, "createdAt" | "updatedAt"> {
-  createdAt: string | Date;
-  updatedAt: string | Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
-function Post({
-  id,
+function PostContent({
   title,
-  content,
   author,
-  liked,
-  likes,
   createdAt,
   updatedAt,
+  content,
+}: Pick<Props, "title" | "author" | "createdAt" | "updatedAt" | "content">) {
+  return (
+    <>
+      <h2 className="text-xl font-bold">{title}</h2>
+      <p className="text-sm text-gray-500">
+        Por <strong>{author}</strong> em {createdAt}
+        {updatedAt !== createdAt && ` (edited on ${updatedAt})`}
+      </p>
+      <p className="my-2">{content}</p>{" "}
+    </>
+  );
+}
+
+export default function Post({
   ghost,
+  likes,
+  liked,
+  author,
+  id,
+  createdAt,
+  updatedAt,
+  content,
+  title,
 }: Props) {
   return (
     <div
       className={`rounded bg-gray-300 p-4 dark:bg-gray-800 ${ghost ? "opacity-50" : ""}`}
     >
-      <h2 className="text-xl font-bold">{title}</h2>
-      <p className="text-sm text-gray-500">
-        Por <strong>{author}</strong> em {new Date(createdAt).toLocaleString()}
-        {updatedAt !== createdAt &&
-          ` (edited on ${new Date(updatedAt).toLocaleString()})`}
-      </p>
-      <p className="my-2">{content}</p>
-
-      <PostBar
-        key={`${id}-${likes}-${liked}`}
-        id={id}
-        liked={liked}
-        likes={likes}
+      <PostContent
         author={author}
+        createdAt={createdAt}
+        updatedAt={updatedAt}
+        content={content}
+        title={title}
       />
+      <PostBar likes={likes} liked={liked} author={author} id={id} />
     </div>
   );
 }
-
-export default memo(Post);

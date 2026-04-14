@@ -12,7 +12,12 @@ type Props = {
   likes: number;
 };
 
-export default function PostBar({ id, liked, likes, author }: Props) {
+export default function PostBar({
+  id,
+  liked,
+  likes,
+  author,
+}: Pick<Props, "id" | "liked" | "likes" | "author">) {
   const user = getUser();
 
   const deletePost = useMutation(

@@ -19,10 +19,18 @@ export default function (_: unknown): SessionDriver {
       return session.value;
     },
     async setItem(key, value) {
-      await db.insert(Session).values({
-        key,
-        value,
-      });
+      await db
+        .insert(Session)
+        .values({
+          key,
+          value,
+        })
+        .onConflictDoUpdate({
+          target: Session.key,
+          set: {
+            value,
+          },
+        });
     },
     async removeItem(key) {
       await db.delete(Session).where(eq(Session.key, key));
