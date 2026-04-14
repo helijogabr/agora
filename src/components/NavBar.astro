@@ -1,19 +1,19 @@
 ---
 import { Icon } from "astro-icon/components";
+import LogoutButton from "./LogoutButton.astro";
 import ThemeToggle from "./ThemeToggle.astro";
-import LogoutButton from "./LogoutButton";
 
 const current = Astro.url.pathname;
 const user = Astro.locals.user?.info;
 
-// Navigation items based on login status
+// prettier-ignore
 const urls = user
   ? {
       "Página Inicial": "/",
     }
   : {
-      Entrar: "/login",
-      Registrar: "/register",
+      "Entrar": "/login",
+      "Registrar": "/register",
     };
 ---
 
@@ -53,7 +53,7 @@ const urls = user
               Logado como <strong>{user.name}</strong>
             </span>
           </div>
-          <LogoutButton client:load />
+          <LogoutButton />
         </div>
       ) : (
         <a
