@@ -13,7 +13,7 @@ const User = defineTable({
       optional: true,
     }),
     createdAt: column.date(),
-    updatedAt: column.date()
+    updatedAt: column.date(),
   },
 });
 

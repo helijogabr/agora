@@ -28,13 +28,13 @@ export default defineConfig({
   },
   env: {
     schema: {
-      "CACHE_VERSION": {
+      CACHE_VERSION: {
         context: "server",
         access: "public",
         type: "number",
-        default: 1
+        default: 1,
       },
-    }
+    },
   },
   vite: {
     plugins: [tailwindcss()],

@@ -1,9 +1,9 @@
 import { actions } from "astro:actions";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { queryClient } from "@/query_client";
-import Post from "./Post";
+import { queryClient } from "@/queryClient";
 import { getUser } from "@/userStore";
+import Post from "./Post";
 
 export type PostData = Awaited<
   ReturnType<typeof actions.getPosts.orThrow>
@@ -29,8 +29,12 @@ export default function Feed({
           pages: data.pages.map((page) => ({
             posts: page.posts.map((post) => ({
               ...post,
-              createdAt: new Date(post.createdAt).toLocaleString(getUser()?.locale),
-              updatedAt: new Date(post.updatedAt).toLocaleString(getUser()?.locale),
+              createdAt: new Date(post.createdAt).toLocaleString(
+                getUser()?.locale,
+              ),
+              updatedAt: new Date(post.updatedAt).toLocaleString(
+                getUser()?.locale,
+              ),
             })),
             nextCursor: page.nextCursor,
           })),

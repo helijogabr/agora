@@ -1,7 +1,7 @@
 import { actions } from "astro:actions";
 import { type InfiniteData, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
-import { queryClient } from "@/query_client";
+import { queryClient } from "@/queryClient";
 import { getUser } from "@/userStore";
 import type { PostData } from "./Feed";
 

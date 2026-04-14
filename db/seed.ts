@@ -2,7 +2,6 @@ import { db, Post, User } from "astro:db";
 
 import bcrypt from "bcrypt";
 
-
 function getDateHoursAgo(hours: number) {
   const date = new Date();
   date.setHours(date.getHours() - hours);
