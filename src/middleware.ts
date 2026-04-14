@@ -1,13 +1,10 @@
-import { actions, getActionContext } from "astro:actions";
+import { getActionContext } from "astro:actions";
 import { defineMiddleware } from "astro:middleware";
 import { session } from "./userStore";
 
 const unprotectedPaths = new Set(["/login", "/register"]);
 
-const unprotectedActions = new Set([
-  actions.createUserForm.name,
-  actions.loginForm.name,
-]);
+const unprotectedActions = new Set(["createUserForm", "loginForm"]);
 
 export const onRequest = defineMiddleware(async (context, next) => {
   if (context.isPrerendered) {

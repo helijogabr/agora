@@ -26,8 +26,10 @@ const theme = Astro.cookies.get("theme")?.value ?? "light";
         this.textContent = newTheme === "light" ? "Claro" : "Escuro";
 
         requestIdleCallback(() => {
-          localStorage.setItem("theme", newTheme);
-          document.cookie = `theme=${newTheme}; path=/; max-age=31536000; SameSite=Lax`;
+          const theme =
+            document.documentElement.getAttribute("data-theme") ?? "light";
+          localStorage.setItem("theme", theme);
+          document.cookie = `theme=${theme}; path=/; max-age=31536000; SameSite=Lax`;
         });
       });
     }
