@@ -1,4 +1,4 @@
-import { actions, getActionContext } from "astro:actions";
+import { getActionContext } from "astro:actions";
 import { db, eq, User } from "astro:db";
 import { CACHE_VERSION } from "astro:env/server";
 import { defineMiddleware } from "astro:middleware";
@@ -7,10 +7,7 @@ import { session } from "./userStore";
 
 const unprotectedPaths = new Set(["/login", "/register"]);
 
-const unprotectedActions = new Set([
-  actions.createUserForm.name,
-  actions.loginForm.name,
-]);
+const unprotectedActions = new Set(["createUserForm", "loginForm"]);
 
 const FNV1A_PRIME = 0x01000193;
 const FNV1A_OFFSET = 0x811c9dc5;
@@ -135,7 +132,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   if (isHtml.get) {
     const cookie = context.cookies.get("hasCache")?.value;
-    const hash = fna1a(userId, updatedAt, locale !== "pt-BR" ? locale : undefined);
+    const hash = fna1a(
+      userId,
+      updatedAt,
+      locale !== "pt-BR" ? locale : undefined,
+    );
 
     if (cookie !== hash) {
       context.locals.invalidateCache = hash;

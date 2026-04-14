@@ -1,15 +1,20 @@
 ---
 import { Icon } from "astro-icon/components";
+import LogoutButton from "./LogoutButton.astro";
 import ThemeToggle from "./ThemeToggle.astro";
-
-// prettier-ignore
-const urls = {
-  "Página Inicial": "/",
-  "Entrar": "/login",
-};
 
 const current = Astro.url.pathname;
 const user = Astro.locals.user?.info;
+
+// prettier-ignore
+const urls = user
+  ? {
+      "Página Inicial": "/",
+    }
+  : {
+      "Entrar": "/login",
+      "Registrar": "/register",
+    };
 ---
 
 <nav
@@ -41,11 +46,14 @@ const user = Astro.locals.user?.info;
   <div class="flex items-center gap-4">
     {
       user?.name ? (
-        <div class="flex cursor-default items-center gap-2">
-          <Icon name="mdi:account" />
-          <span>
-            Logado como <strong>{user.name}</strong>
-          </span>
+        <div class="flex items-center gap-4">
+          <div class="flex cursor-default items-center gap-2">
+            <Icon name="mdi:account" />
+            <span>
+              Logado como <strong>{user.name}</strong>
+            </span>
+          </div>
+          <LogoutButton />
         </div>
       ) : (
         <a
