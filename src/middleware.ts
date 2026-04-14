@@ -71,8 +71,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
     get get() {
       const val =
         context.request.method === "GET" &&
-        !context.url.pathname.startsWith("/api/") &&
-        (!action || action.calledFrom === "form");
+        (!action || action.calledFrom === "form") &&
+        !context.url.pathname.startsWith("/api/");
 
       Object.defineProperty(this, "get", { value: val, configurable: true });
       return val;
