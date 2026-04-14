@@ -1,5 +1,6 @@
 import { actions, getActionContext } from "astro:actions";
 import { db, eq, User } from "astro:db";
+import { CACHE_VERSION } from "astro:env/server";
 import { defineMiddleware } from "astro:middleware";
 import type { APIContext } from "astro";
 import { session } from "./userStore";
@@ -11,12 +12,35 @@ const unprotectedActions = new Set([
   actions.loginForm.name,
 ]);
 
-function fna1a(strs: string[]): string {
-  let hash = 0x811c9dc5;
+const FNV1A_PRIME = 0x01000193;
+const FNV1A_OFFSET = 0x811c9dc5;
+const FNV1A_MOD = 0x100000000;
 
-  for (const str of strs) {
-    for (let i = 0; i < str.length; i++) {
-      hash = Math.imul(hash ^ str.charCodeAt(i), 0x01000193);
+function fna1a(
+  userId: number,
+  timestamp: number,
+  locale?: string | undefined,
+): string {
+  let hash = FNV1A_OFFSET;
+
+  // mix-in cache version
+  hash = Math.imul(hash ^ CACHE_VERSION, FNV1A_PRIME);
+
+  // mix-in timestamp, 32 bits at a time
+  hash = Math.imul(hash ^ (timestamp >>> 0), FNV1A_PRIME);
+  hash = Math.imul(
+    hash ^ (Math.floor(timestamp / FNV1A_MOD) >>> 0),
+    FNV1A_PRIME,
+  );
+
+  // mix-in user ID
+  hash = Math.imul(hash ^ (userId >>> 0), FNV1A_PRIME);
+  hash = Math.imul(hash ^ (Math.floor(userId / FNV1A_MOD) >>> 0), FNV1A_PRIME);
+
+  if (locale) {
+    // mix-in locale string
+    for (let j = 0; j < locale.length; j++) {
+      hash = Math.imul(hash ^ locale.charCodeAt(j), FNV1A_PRIME);
     }
   }
 
@@ -111,11 +135,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   if (isHtml.get) {
     const cookie = context.cookies.get("hasCache")?.value;
-    const hash = fna1a(
-      [userId, updatedAt, locale !== "pt-BR" && locale]
-        .filter(Boolean)
-        .map(String),
-    );
+    const hash = fna1a(userId, updatedAt, locale !== "pt-BR" ? locale : undefined);
 
     if (cookie !== hash) {
       context.locals.invalidateCache = hash;
