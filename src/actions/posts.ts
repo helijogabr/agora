@@ -71,12 +71,14 @@ export const createPost = defineAction({
 
     const { id: userId } = locals.user;
 
+    const now = new Date();
+
     const res = await db.insert(Post).values({
       title,
       content,
       author: userId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
     });
 
     if (!res.lastInsertRowid) {
@@ -147,7 +149,6 @@ export const likePost = defineAction({
         .values({
           user: userId,
           post: postId,
-          createdAt: new Date(),
         })
         .onConflictDoNothing()
         .then((res) => res.rowsAffected);

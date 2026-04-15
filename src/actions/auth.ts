@@ -31,12 +31,14 @@ export const createUserForm = defineAction({
 
     const hashed = await bcrypt.hash(password, 10);
 
+    const now = new Date();
+
     const result = await db.insert(User).values({
       name: username,
       password: hashed,
       city,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
     });
 
     if (!result.lastInsertRowid) {
