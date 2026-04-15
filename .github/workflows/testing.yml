@@ -16,7 +16,7 @@ concurrency:
 jobs:
   ci-pipeline:
     env:
-      HAS_DB_SECRETS: ${{ secrets.ASTRO_DB_APP_TOKEN_READONLY != '' }}
+      HAS_DB_SECRETS: ${{ secrets.DATABASE_TOKEN_READONLY != '' }}
 
     runs-on: ubuntu-latest
     steps:
@@ -49,19 +49,35 @@ jobs:
       - name: TypeScript type checking
         run: pnpm tsc --noEmit
 
-      - name: Astro DB check
+      - name: Drizzle DB generate
+        run: pnpm drizzle-kit generate
+
+      - name: Verify if schema is up to date
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::Schema changes detected but not committed."
+            git status --porcelain
+            exit 1
+          fi
+
+      - name: Drizzle DB check
+        run: pnpm drizzle-kit check
+
+      - name: Drizzle DB check
         if: env.HAS_DB_SECRETS == 'true'
-        run: pnpm astro db verify
+        run: pnpm drizzle-kit push --strict --verbose
         env:
-          ASTRO_DB_APP_TOKEN: ${{ secrets.ASTRO_DB_APP_TOKEN_READONLY }}
-          ASTRO_DB_REMOTE_URL: ${{ secrets.ASTRO_DB_REMOTE_URL }}
+          DATABASE_TOKEN: ${{ secrets.DATABASE_TOKEN_READONLY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
 
       - name: Run unit tests
         run: pnpm vitest run --passWithNoTests
 
       - name: Compiling test
         if: env.HAS_DB_SECRETS == 'true'
-        run: pnpm astro build --remote
+        run: pnpm astro build
         env:
-          ASTRO_DB_APP_TOKEN: ${{ secrets.ASTRO_DB_APP_TOKEN_READONLY }}
-          ASTRO_DB_REMOTE_URL: ${{ secrets.ASTRO_DB_REMOTE_URL }}
+          DATABASE_TOKEN: ${{ secrets.DATABASE_TOKEN_READONLY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
