@@ -23,7 +23,7 @@ export default function Feed({
         queryFn: ({ pageParam: cursor }) =>
           actions.getPosts.orThrow({
             cursor,
-            limit: 2,
+            limit: 10,
           }),
         select: (data) => {
           const locale = getUser()?.locale;

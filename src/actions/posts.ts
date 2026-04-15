@@ -1,17 +1,7 @@
 import { ActionError, defineAction } from "astro:actions";
-import {
-  and,
-  count,
-  db,
-  desc,
-  eq,
-  exists,
-  Likes,
-  lt,
-  Post,
-  User,
-} from "astro:db";
 import { z } from "astro/zod";
+import { and, count, desc, eq, exists, lt } from "drizzle-orm";
+import { db, Likes, Post, User } from "../db";
 
 async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));

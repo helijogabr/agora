@@ -1,8 +1,9 @@
 import { getActionContext } from "astro:actions";
-import { db, eq, User } from "astro:db";
 import { CACHE_VERSION } from "astro:env/server";
 import { defineMiddleware } from "astro:middleware";
 import type { APIContext } from "astro";
+import { eq } from "drizzle-orm";
+import { db, User } from "@/db";
 import { session } from "./userStore";
 
 const unprotectedPaths = new Set(["/login", "/register"]);

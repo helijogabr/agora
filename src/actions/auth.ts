@@ -1,8 +1,8 @@
 import { ActionError, defineAction } from "astro:actions";
-import { db, eq, User } from "astro:db";
 import { z } from "astro/zod";
-
 import bcrypt from "bcrypt";
+import { eq } from "drizzle-orm";
+import { db, User } from "../db";
 
 export const createUserForm = defineAction({
   accept: "form",

@@ -1,6 +1,7 @@
-import { db, Post, User } from "astro:db";
-
 import bcrypt from "bcrypt";
+import type { LibSQLDatabase } from "drizzle-orm/libsql";
+import { reset, seed } from "drizzle-seed";
+import * as schema from "./schema";
 
 function getDateHoursAgo(hours: number) {
   const date = new Date();
@@ -9,58 +10,67 @@ function getDateHoursAgo(hours: number) {
   return date;
 }
 
+const { User, Post } = schema;
+
 // https://astro.build/db/seed
-export default async function seed() {
+export default async (db: LibSQLDatabase) => {
+  await reset(db, schema);
+
+  await seed(db, schema).refine((f) => ({
+    User: {
+      columns: {
+        name: f.firstName(),
+        city: f.city(),
+        role: f.weightedRandom([
+          {
+            weight: 0.1,
+            value: f.default({ defaultValue: "admin" }),
+          },
+          { weight: 0.9, value: f.default({ defaultValue: "user" }) },
+        ]),
+      },
+    },
+    Post: {
+      columns: {
+        title: f.loremIpsum({ sentencesCount: 1 }),
+        content: f.loremIpsum({ sentencesCount: 3 }),
+      },
+      count: 10,
+    },
+    Likes: {
+      count: 10,
+    },
+  }));
+
   await db.insert(User).values([
     {
-      id: 1,
+      id: 128,
       name: "alice",
       password: await bcrypt.hash("123", 10),
       city: "São Paulo",
-      createdAt: getDateHoursAgo(5),
-      updatedAt: getDateHoursAgo(4),
     },
     {
-      id: 2,
+      id: 256,
       name: "bob",
       password: await bcrypt.hash("456", 10),
       city: "Rio de Janeiro",
-      createdAt: getDateHoursAgo(3),
-      updatedAt: getDateHoursAgo(3),
     },
   ]);
 
   await db.insert(Post).values([
     {
-      author: 1,
+      author: 128,
       content: "Hello, this is Alice's first post!",
       title: "Alice's First Post",
       createdAt: getDateHoursAgo(4),
       updatedAt: getDateHoursAgo(4),
     },
     {
-      author: 2,
+      author: 256,
       content: "Hi, Bob here. This is my first post.",
       title: "Bob's First Post",
       createdAt: getDateHoursAgo(3),
       updatedAt: getDateHoursAgo(3),
     },
-    {
-      author: 1,
-      content: "Alice again! Just wanted to share another post.",
-      title: "Alice's Second Post",
-      createdAt: getDateHoursAgo(2),
-      updatedAt: getDateHoursAgo(2),
-    },
-    {
-      author: 2,
-      content: "Bob's back with another post. Hope you like it!",
-      title: "Bob's Second Post",
-      createdAt: getDateHoursAgo(1),
-      updatedAt: getDateHoursAgo(1),
-    },
   ]);
-
-  console.log(await db.select().from(User).all());
-  console.log(await db.select().from(Post).all());
-}
+};
