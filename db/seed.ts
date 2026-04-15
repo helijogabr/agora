@@ -1,6 +1,7 @@
 import { hash } from "bcrypt-ts";
+import type { DrizzleD1Database } from "drizzle-orm/d1";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
-import { reset, seed } from "drizzle-seed";
+import { seed } from "drizzle-seed";
 import * as schema from "./schema";
 import { Post, User } from "./schema";
 
@@ -12,9 +13,9 @@ function getDateHoursAgo(hours: number) {
 }
 
 // https://astro.build/db/seed
-export default async (db: LibSQLDatabase) => {
-  await reset(db, schema);
-
+export async function seeder(
+  db: DrizzleD1Database<typeof schema> | DrizzleD1Database | LibSQLDatabase,
+) {
   await seed(db, schema).refine((f) => ({
     User: {
       columns: {

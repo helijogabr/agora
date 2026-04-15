@@ -11,7 +11,11 @@
     "preview": "astro preview",
     "astro": "astro",
     "test": "vitest",
-    "generate-types": "wrangler types"
+    "sync": "wrangler types && astro sync",
+    "db": "drizzle-kit generate --config drizzle.config.prod.ts && wrangler d1 migrations apply DB --local",
+    "db:push": "drizzle-kit push --config drizzle.config.prod.ts",
+    "studio:prod": "drizzle-kit studio --config drizzle.config.prod.ts",
+    "studio": "drizzle-kit studio"
   },
   "license": "AGPL-3.0-or-later",
   "dependencies": {
@@ -20,7 +24,6 @@
     "@astrojs/sitemap": "^3.7.2",
     "@formkit/auto-animate": "^0.9.0",
     "@iconify-json/mdi": "^1.2.3",
-    "@libsql/client": "^0.17.2",
     "@nanostores/react": "^1.1.0",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/react-query": "^5.96.1",
@@ -29,12 +32,12 @@
     "drizzle-orm": "1.0.0-beta.21",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "tailwindcss": "^4.2.2",
-    "wrangler": "^4.82.2"
+    "tailwindcss": "^4.2.2"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.8",
     "@biomejs/biome": "2.4.10",
+    "@libsql/client": "^0.17.2",
     "@types/ioredis-mock": "^8.2.7",
     "@types/lodash": "^4.17.24",
     "@types/node": "^25.6.0",
@@ -49,7 +52,8 @@
     "prettier-plugin-tailwindcss": "0.7.2",
     "typescript": "^6.0.2",
     "vite": "^7.3.1",
-    "vitest": "^4.1.4"
+    "vitest": "^4.1.4",
+    "wrangler": "^4.82.2"
   },
   "overrides": {
     "vite": "^7"

@@ -15,6 +15,6 @@ export default defineConfig({
   verbose: true,
   strict: true,
   dbCredentials: {
-    url: `file:./${basePath}/${dbFile}`,
+    url: `file:./${basePath}/${dbFile}`
   },
 });
