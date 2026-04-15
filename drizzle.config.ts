@@ -1,5 +1,12 @@
 import "dotenv/config";
+import { readdir } from "node:fs/promises";
 import { defineConfig } from "drizzle-kit";
+
+const basePath = ".wrangler/state/v3/d1/miniflare-D1DatabaseObject";
+const files = await readdir(basePath);
+const dbFile = files.find(
+  (file) => !file.startsWith("metadata") && file.endsWith(".sqlite"),
+);
 
 export default defineConfig({
   dialect: "sqlite",
@@ -8,7 +15,6 @@ export default defineConfig({
   verbose: true,
   strict: true,
   dbCredentials: {
-    url: process.env.DATABASE_URL || "",
-    token: process.env.DATABASE_TOKEN || "",
+    url: `file:./${basePath}/${dbFile}`,
   },
 });

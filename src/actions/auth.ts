@@ -1,6 +1,6 @@
 import { ActionError, defineAction } from "astro:actions";
 import { z } from "astro/zod";
-import bcrypt from "bcrypt";
+import { compare, hash } from "bcrypt-ts";
 import { db, User } from "../db";
 
 export const createUserForm = defineAction({
@@ -31,7 +31,7 @@ export const createUserForm = defineAction({
       });
     }
 
-    const hashed = await bcrypt.hash(password, 10);
+    const hashed = await hash(password, 10);
 
     const now = new Date();
 
@@ -43,7 +43,7 @@ export const createUserForm = defineAction({
       updatedAt: now,
     });
 
-    if (!result.lastInsertRowid) {
+    if (!result.meta.rows_written) {
       throw new ActionError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Falha ao criar usuário. Por favor, tente novamente.",
@@ -52,7 +52,7 @@ export const createUserForm = defineAction({
 
     session?.destroy();
     cookies.delete("hasCache", { path: "/" });
-    session?.set("userId", Number(result.lastInsertRowid), {
+    session?.set("userId", Number(result.meta.last_row_id), {
       ttl: 1000 * 60 * 60 * 24, // 1 day
     });
 
@@ -96,7 +96,7 @@ export const loginForm = defineAction({
       });
     }
 
-    const passwordMatch = await bcrypt.compare(password, user.password);
+    const passwordMatch = await compare(password, user.password);
 
     if (!passwordMatch) {
       throw new ActionError({

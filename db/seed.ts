@@ -1,7 +1,8 @@
-import bcrypt from "bcrypt";
+import { hash } from "bcrypt-ts";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { reset, seed } from "drizzle-seed";
 import * as schema from "./schema";
+import { Post, User } from "./schema";
 
 function getDateHoursAgo(hours: number) {
   const date = new Date();
@@ -9,8 +10,6 @@ function getDateHoursAgo(hours: number) {
 
   return date;
 }
-
-const { User, Post } = schema;
 
 // https://astro.build/db/seed
 export default async (db: LibSQLDatabase) => {
@@ -46,13 +45,13 @@ export default async (db: LibSQLDatabase) => {
     {
       id: 128,
       name: "alice",
-      password: await bcrypt.hash("123", 10),
+      password: await hash("123", 10),
       city: "São Paulo",
     },
     {
       id: 256,
       name: "bob",
-      password: await bcrypt.hash("456", 10),
+      password: await hash("456", 10),
       city: "Rio de Janeiro",
     },
   ]);

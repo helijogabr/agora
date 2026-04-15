@@ -1,13 +1,11 @@
-import { rm } from "node:fs/promises";
+import { readdir } from "node:fs/promises";
+import cloudflare from "@astrojs/cloudflare";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
-import vercel from "@astrojs/vercel";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
-import icon from "astro-icon";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
-import redisDriver from "./db/kv/driver";
 import seed from "./db/seed";
 
 // https://astro.build/config
@@ -19,7 +17,6 @@ export default defineConfig({
       },
     }),
     sitemap(),
-    icon(),
   ],
   i18n: {
     defaultLocale: "pt-BR",
@@ -36,24 +33,12 @@ export default defineConfig({
         type: "number",
         default: 1,
       },
-      DATABASE_URL: {
-        context: "server",
-        access: "secret",
-        type: "string",
-      },
-      DATABASE_TOKEN: {
-        context: "server",
-        access: "secret",
-        type: "string",
-      },
-      REDIS_URL: {
-        context: "server",
-        access: "secret",
-        type: "string",
-      },
     },
   },
   vite: {
+    ssr: {
+      target: "webworker",
+    },
     plugins: [
       tailwindcss(),
       {
@@ -63,26 +48,26 @@ export default defineConfig({
         async configureServer() {
           if (!import.meta.env.DEV) return;
 
-          await rm("./db/dev.db", { force: true });
+          const basePath = ".wrangler/state/v3/d1/miniflare-D1DatabaseObject";
+          const files = await readdir(basePath);
+          const dbFile = files.find(
+            (file) => !file.startsWith("metadata") && file.endsWith(".sqlite"),
+          );
 
-          const db = drizzle({
-            connection: {
-              url: "file:./db/dev.db",
-            },
-          });
+          const db = drizzle(`file:./${basePath}/${dbFile}`);
 
+          console.log("SEEDING DATABASE...");
           await migrate(db, { migrationsFolder: "./drizzle" });
           await seed(db);
         },
       },
     ],
   },
-  site: "https://todo-astro.vercel.app",
+  site: "https://agora.ame-pistache.workers.dev/",
   output: "server",
-  adapter: vercel(),
-  session: {
-    driver: redisDriver(),
-  },
+  adapter: cloudflare({
+    sessionKVBindingName: "SESSION",
+  }),
   prefetch: {
     defaultStrategy: "hover",
     prefetchAll: true,

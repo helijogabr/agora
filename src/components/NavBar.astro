@@ -1,5 +1,4 @@
 ---
-import { Icon } from "astro-icon/components";
 import LogoutButton from "./LogoutButton.astro";
 import ThemeToggle from "./ThemeToggle.astro";
 
@@ -48,7 +47,6 @@ const urls = user
       user?.name ? (
         <div class="flex items-center gap-4">
           <div class="flex cursor-default items-center gap-2">
-            <Icon name="mdi:account" />
             <span>
               Logado como <strong>{user.name}</strong>
             </span>

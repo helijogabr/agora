@@ -1,4 +1,5 @@
 allowBuilds:
-  bcrypt: true
   esbuild: true
   sharp: true
+  better-sqlite3: true
+  workerd: true

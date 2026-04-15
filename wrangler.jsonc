@@ -1,0 +1,35 @@
+{
+	"compatibility_date": "2026-04-15",
+	"compatibility_flags": [
+		"global_fetch_strictly_public",
+		"nodejs_compat"
+	],
+	"name": "agora",
+	"main": "@astrojs/cloudflare/entrypoints/server",
+	"assets": {
+		"directory": "./dist",
+		"binding": "ASSETS"
+	},
+	"observability": {
+		"enabled": true
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "agora",
+			"database_id": "71dded38-b092-449b-9061-865c8efe4d3d",
+      "preview_database_id": "devdb",
+			"migrations_dir": "./drizzle"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "SESSION",
+			"id": "592d70168bcf47d0a6c2ea7c161811d2"
+		},
+		{
+			"binding": "KV",
+			"id": "404b93e68cb04b9992e836210947acb9"
+		}
+	]
+}

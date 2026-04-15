@@ -92,7 +92,7 @@ export const createPost = defineAction({
       updatedAt: now,
     });
 
-    if (!res.lastInsertRowid) {
+    if (!res.meta.rows_written) {
       throw new ActionError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Falha ao criar post.",
@@ -101,7 +101,7 @@ export const createPost = defineAction({
 
     return {
       success: true,
-      postId: res.lastInsertRowid,
+      postId: res.meta.last_row_id,
     };
   },
 });
@@ -125,7 +125,7 @@ export const deletePost = defineAction({
     const res = await db
       .delete(Post)
       .where(where)
-      .then((res) => res.rowsAffected);
+      .then((res) => res.meta.rows_written);
 
     if (res === 0) {
       throw new ActionError({
@@ -162,7 +162,7 @@ export const likePost = defineAction({
           postId,
         })
         .onConflictDoNothing()
-        .then((res) => res.rowsAffected);
+        .then((res) => res.meta.rows_written);
 
       // if changed, post is liked.
       isLiked = res > 0;
@@ -170,7 +170,7 @@ export const likePost = defineAction({
       await db
         .delete(Likes)
         .where(and(eq(Likes.userId, userId), eq(Likes.postId, postId)))
-        .then((res) => res.rowsAffected);
+        .then((res) => res.meta.rows_written);
 
       // delete fails silently, its never liked
       isLiked = false;
