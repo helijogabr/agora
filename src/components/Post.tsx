@@ -18,9 +18,9 @@ function PostContent({
       <h2 className="text-xl font-bold">{title}</h2>
       <p className="text-sm text-gray-500">
         Por <strong>{author}</strong> em {createdAt}
-        {updatedAt !== createdAt && ` (edited on ${updatedAt})`}
+        {updatedAt !== createdAt && ` (editado em ${updatedAt})`}
       </p>
-      <p className="my-2">{content}</p>{" "}
+      <p className="my-2">{content}</p>
     </>
   );
 }

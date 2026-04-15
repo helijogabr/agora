@@ -25,20 +25,20 @@ export default function Feed({
             cursor,
             limit: 2,
           }),
-        select: (data) => ({
-          pages: data.pages.map((page) => ({
-            posts: page.posts.map((post) => ({
-              ...post,
-              createdAt: new Date(post.createdAt).toLocaleString(
-                getUser()?.locale,
-              ),
-              updatedAt: new Date(post.updatedAt).toLocaleString(
-                getUser()?.locale,
-              ),
+        select: (data) => {
+          const locale = getUser()?.locale;
+
+          return {
+            pages: data.pages.map((page) => ({
+              posts: page.posts.map((post) => ({
+                ...post,
+                createdAt: new Date(post.createdAt).toLocaleString(locale),
+                updatedAt: new Date(post.updatedAt).toLocaleString(locale),
+              })),
+              nextCursor: page.nextCursor,
             })),
-            nextCursor: page.nextCursor,
-          })),
-        }),
+          };
+        },
         initialPageParam: null as Date | null,
         initialData: {
           pages: [{ posts, nextCursor }],

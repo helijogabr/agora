@@ -13,9 +13,9 @@ const FNV1A_PRIME = 0x01000193;
 const FNV1A_OFFSET = 0x811c9dc5;
 const FNV1A_MOD = 0x100000000;
 
-function fna1a(
+function fnv1a(
   userId: number,
-  timestamp: number,
+  updatedAt: number,
   locale?: string | undefined,
 ): string {
   let hash = FNV1A_OFFSET;
@@ -24,9 +24,9 @@ function fna1a(
   hash = Math.imul(hash ^ CACHE_VERSION, FNV1A_PRIME);
 
   // mix-in timestamp, 32 bits at a time
-  hash = Math.imul(hash ^ (timestamp >>> 0), FNV1A_PRIME);
+  hash = Math.imul(hash ^ (updatedAt >>> 0), FNV1A_PRIME);
   hash = Math.imul(
-    hash ^ (Math.floor(timestamp / FNV1A_MOD) >>> 0),
+    hash ^ (Math.floor(updatedAt / FNV1A_MOD) >>> 0),
     FNV1A_PRIME,
   );
 
@@ -111,8 +111,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
       city: dbUser.city,
     };
 
-    context.session?.set("user", user);
-    context.session?.set("updatedAt", updatedAt);
+    context.session?.set("userId", userId, {
+      ttl: 1000 * 60 * 60 * 24, // 1 day
+    });
+    context.session?.set("user", user, {
+      ttl: 1000 * 60 * 60 * 24, // 1 day
+    });
+    context.session?.set("updatedAt", updatedAt, {
+      ttl: 1000 * 60 * 60 * 24, // 1 day
+    });
   }
 
   if (!user || !updatedAt) {
@@ -132,7 +139,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   if (isHtml.get) {
     const cookie = context.cookies.get("hasCache")?.value;
-    const hash = fna1a(
+    const hash = fnv1a(
       userId,
       updatedAt,
       locale !== "pt-BR" ? locale : undefined,
