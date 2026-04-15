@@ -29,7 +29,7 @@ export const Post = sqliteTable("posts", {
   id: t.integer().primaryKey(),
   title: t.text().notNull(),
   content: t.text().notNull(),
-  author: t
+  authorId: t
     .integer()
     .notNull()
     .references(() => User.id, {
@@ -53,13 +53,13 @@ export const Post = sqliteTable("posts", {
 export const Likes = sqliteTable(
   "likes",
   {
-    post: t
+    postId: t
       .integer()
       .notNull()
       .references(() => Post.id, {
         onDelete: "cascade",
       }),
-    user: t
+    userId: t
       .integer()
       .notNull()
       .references(() => User.id, {
@@ -72,5 +72,5 @@ export const Likes = sqliteTable(
       .notNull()
       .default(sql`(unixepoch())`),
   },
-  (table) => [t.uniqueIndex("user_post_unique").on(table.user, table.post)],
+  (table) => [t.uniqueIndex("user_post_unique").on(table.userId, table.postId)],
 );

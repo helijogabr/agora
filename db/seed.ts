@@ -59,14 +59,14 @@ export default async (db: LibSQLDatabase) => {
 
   await db.insert(Post).values([
     {
-      author: 128,
+      authorId: 128,
       content: "Hello, this is Alice's first post!",
       title: "Alice's First Post",
       createdAt: getDateHoursAgo(4),
       updatedAt: getDateHoursAgo(4),
     },
     {
-      author: 256,
+      authorId: 256,
       content: "Hi, Bob here. This is my first post.",
       title: "Bob's First Post",
       createdAt: getDateHoursAgo(3),

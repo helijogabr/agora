@@ -62,6 +62,7 @@ export default function Feed({
               <li key={post.id}>
                 <Post
                   {...post}
+                  author={post.author.name}
                   createdAt={post.createdAt}
                   updatedAt={post.updatedAt}
                   liked={!!post.liked}

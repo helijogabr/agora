@@ -7,7 +7,7 @@ import type { PostData } from "./Feed";
 
 type Props = {
   id: PostData["id"];
-  author: PostData["author"];
+  author: string;
   liked: boolean;
   likes: number;
 };

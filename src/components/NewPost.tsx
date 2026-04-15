@@ -18,7 +18,7 @@ export default function NewPost() {
         const now = new Date();
 
         const post: PostData = {
-          author: user?.name || "Unknown",
+          author: { name: user?.name ?? "Unknown" },
           content: newPost.content,
           id: now.getTime(),
           likes: 0,

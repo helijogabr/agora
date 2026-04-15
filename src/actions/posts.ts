@@ -1,7 +1,7 @@
 import { ActionError, defineAction } from "astro:actions";
 import { z } from "astro/zod";
-import { and, count, desc, eq, exists, lt } from "drizzle-orm";
-import { db, Likes, Post, User } from "../db";
+import { and, eq, exists } from "drizzle-orm";
+import { db, Likes, Post } from "../db";
 
 async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -12,7 +12,9 @@ export const getPosts = defineAction({
     limit: z.int().nonnegative().max(50).default(10),
     cursor: z
       .union([z.date(), z.iso.datetime()])
-      .transform((value) => (value ? new Date(value) : value))
+      .transform((value) =>
+        typeof value === "string" ? new Date(value) : value,
+      )
       .nullable()
       .optional(),
   }),
@@ -23,29 +25,38 @@ export const getPosts = defineAction({
 
     const user = locals.user;
 
-    const posts = await db
-      .select({
-        id: Post.id,
-        title: Post.title,
-        content: Post.content,
-        createdAt: Post.createdAt,
-        updatedAt: Post.updatedAt,
-        author: User.name,
-        likes: count(Likes.post),
-        liked: exists(
-          db
-            .select()
-            .from(Likes)
-            .where(and(eq(Likes.user, user.id), eq(Likes.post, Post.id))),
-        ).mapWith((exists) => Boolean(+exists)),
-      })
-      .from(Post)
-      .innerJoin(User, eq(Post.author, User.id))
-      .leftJoin(Likes, eq(Likes.post, Post.id))
-      .where(cursor ? lt(Post.updatedAt, new Date(cursor)) : undefined)
-      .orderBy(desc(Post.updatedAt))
-      .groupBy(Post.id, User.id)
-      .limit(limit + 1);
+    const posts = await db.query.Post.findMany({
+      columns: {
+        id: true,
+        title: true,
+        content: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      with: {
+        author: {
+          columns: {
+            name: true,
+          },
+        },
+      },
+      extras: {
+        likes: (t) => db.$count(Likes, eq(Likes.postId, t.id)),
+        liked: (t, { sql }) =>
+          exists(
+            db
+              .select({ n: sql`1` })
+              .from(Likes)
+              .where(and(eq(Likes.userId, user.id), eq(Likes.postId, t.id))),
+          ).mapWith(Boolean),
+      },
+      limit,
+      where: {
+        updatedAt: {
+          lt: cursor ?? undefined,
+        },
+      },
+    });
 
     const extra = posts.length > limit ? posts.pop() : undefined;
     const last = posts.at(-1);
@@ -76,7 +87,7 @@ export const createPost = defineAction({
     const res = await db.insert(Post).values({
       title,
       content,
-      author: userId,
+      authorId: userId,
       createdAt: now,
       updatedAt: now,
     });
@@ -109,7 +120,7 @@ export const deletePost = defineAction({
     const where =
       user.info.role === "admin"
         ? eq(Post.id, postId)
-        : and(eq(Post.id, postId), eq(Post.author, user.id));
+        : and(eq(Post.id, postId), eq(Post.authorId, user.id));
 
     const res = await db
       .delete(Post)
@@ -147,8 +158,8 @@ export const likePost = defineAction({
       const res = await db
         .insert(Likes)
         .values({
-          user: userId,
-          post: postId,
+          userId,
+          postId,
         })
         .onConflictDoNothing()
         .then((res) => res.rowsAffected);
@@ -158,23 +169,19 @@ export const likePost = defineAction({
     } else {
       await db
         .delete(Likes)
-        .where(and(eq(Likes.user, userId), eq(Likes.post, postId)))
+        .where(and(eq(Likes.userId, userId), eq(Likes.postId, postId)))
         .then((res) => res.rowsAffected);
 
       // delete fails silently, its never liked
       isLiked = false;
     }
 
-    const res = await db
-      .select({ count: count() })
-      .from(Likes)
-      .where(eq(Likes.post, postId))
-      .get();
+    const res = await db.$count(Likes, eq(Likes.postId, postId));
 
     return {
       success: true,
       isLiked,
-      likes: res?.count ?? 0,
+      likes: res ?? 0,
     };
   },
 });

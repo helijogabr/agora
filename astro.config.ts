@@ -1,3 +1,4 @@
+import { rm } from "node:fs/promises";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import vercel from "@astrojs/vercel";
@@ -6,7 +7,6 @@ import { defineConfig } from "astro/config";
 import icon from "astro-icon";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
-import { rm } from "fs/promises";
 import redisDriver from "./db/kv/driver";
 import seed from "./db/seed";
 
