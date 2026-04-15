@@ -1,10 +1,6 @@
 import type { AsyncLocalStorage } from "node:async_hooks";
 
-type User = {
-  name: string;
-  city: string;
-  role?: string | undefined;
-};
+type User = App.Locals["user"]["info"];
 
 type ALS = AsyncLocalStorage<App.Locals["user"]["info"] | undefined>;
 

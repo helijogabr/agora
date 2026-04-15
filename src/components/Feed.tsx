@@ -1,7 +1,8 @@
 import { actions } from "astro:actions";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { queryClient } from "@/query_client";
+import { queryClient } from "@/queryClient";
+import { getUser } from "@/userStore";
 import Post from "./Post";
 
 export type PostData = Awaited<
@@ -24,6 +25,20 @@ export default function Feed({
             cursor,
             limit: 2,
           }),
+        select: (data) => {
+          const locale = getUser()?.locale;
+
+          return {
+            pages: data.pages.map((page) => ({
+              posts: page.posts.map((post) => ({
+                ...post,
+                createdAt: new Date(post.createdAt).toLocaleString(locale),
+                updatedAt: new Date(post.updatedAt).toLocaleString(locale),
+              })),
+              nextCursor: page.nextCursor,
+            })),
+          };
+        },
         initialPageParam: null as Date | null,
         initialData: {
           pages: [{ posts, nextCursor }],
@@ -40,20 +55,19 @@ export default function Feed({
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="flex flex-col gap-2">
-        <ul ref={isLoading ? undefined : animate} className="flex flex-col gap-2">
-          {data?.pages.map((page) =>
-            page.posts.map((post) => (
+        <ul ref={animate} className="flex flex-col gap-2">
+          {data?.pages
+            .flatMap((page) => page.posts)
+            .map((post) => (
               <li key={post.id}>
                 <Post
-                  key={post.id}
                   {...post}
-                  createdAt={post.createdAt.toISOString()}
-                  updatedAt={post.updatedAt.toISOString()}
+                  createdAt={post.createdAt}
+                  updatedAt={post.updatedAt}
                   liked={!!post.liked}
                 />
               </li>
-            )),
-          )}
+            ))}
         </ul>
       </div>
 

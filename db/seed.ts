@@ -2,6 +2,13 @@ import { db, Post, User } from "astro:db";
 
 import bcrypt from "bcrypt";
 
+function getDateHoursAgo(hours: number) {
+  const date = new Date();
+  date.setHours(date.getHours() - hours);
+
+  return date;
+}
+
 // https://astro.build/db/seed
 export default async function seed() {
   await db.insert(User).values([
@@ -10,21 +17,18 @@ export default async function seed() {
       name: "alice",
       password: await bcrypt.hash("123", 10),
       city: "São Paulo",
+      createdAt: getDateHoursAgo(5),
+      updatedAt: getDateHoursAgo(4),
     },
     {
       id: 2,
       name: "bob",
       password: await bcrypt.hash("456", 10),
       city: "Rio de Janeiro",
+      createdAt: getDateHoursAgo(3),
+      updatedAt: getDateHoursAgo(3),
     },
   ]);
-
-  function getDateHoursAgo(hours: number) {
-    const date = new Date();
-    date.setHours(date.getHours() - hours);
-
-    return date;
-  }
 
   await db.insert(Post).values([
     {

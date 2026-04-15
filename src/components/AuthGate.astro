@@ -4,13 +4,12 @@ const { invalidateCache, user } = Astro.locals;
 
 {
   invalidateCache && user?.info && (
-    <script is:inline define:vars={{ user: user.info }}>
+    <script is:inline define:vars={{ user: user.info, hash: invalidateCache }}>
       window.__USER__ = user;
 
       requestIdleCallback(() => {
-        localStorage.setItem('user_cache',
-        JSON.stringify(user)); const u = encodeURIComponent(user.name);
-        document.cookie = `hasCache=${u}; path=/; max-age=31536000; SameSite=Lax`;
+        localStorage.setItem('user_cache', JSON.stringify(user));
+        document.cookie = `hasCache=${hash}; path=/; max-age=31536000; SameSite=Lax`;
       })
     </script>
   )

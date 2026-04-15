@@ -1,6 +1,7 @@
 declare namespace App {
   interface SessionData {
     userId: number;
+    updatedAt: number;
     user: {
       name: string;
       city: string;
@@ -15,9 +16,10 @@ declare namespace App {
         name: string;
         city: string;
         role?: "admin" | undefined;
+        locale?: string | undefined;
       };
     };
-    invalidateCache?: boolean;
+    invalidateCache?: string;
   }
 }
 

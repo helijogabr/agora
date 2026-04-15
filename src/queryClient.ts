@@ -6,7 +6,7 @@ export const queryClient = import.meta.env.SSR
         queries: {
           staleTime: Infinity,
           gcTime: 0,
-          enabled: false
+          enabled: false,
         },
       },
     })
