@@ -56,6 +56,9 @@ export const getPosts = defineAction({
           lt: cursor ?? undefined,
         },
       },
+      orderBy: {
+        updatedAt: "desc",
+      }
     });
 
     const extra = posts.length > limit ? posts.pop() : undefined;
