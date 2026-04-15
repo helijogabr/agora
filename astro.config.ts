@@ -36,8 +36,25 @@ export default defineConfig({
     },
   },
   vite: {
+    resolve: {
+      dedupe: ["@astrojs/react", "react", "react-dom", "@tanstack/react-query"],
+    },
     ssr: {
       target: "webworker",
+      optimizeDeps: {
+        include: [
+          "drizzle-orm",
+          "drizzle-orm/d1",
+          "drizzle-orm/sqlite-core",
+          "astro/actions/runtime/entrypoints/server.js",
+          "astro/virtual-modules/transitions.js",
+          "astro/env/runtime",
+          "@astrojs/cloudflare/entrypoints/server.js",
+          "astro/zod",
+          "bcrypt-ts",
+        ],
+      },
+      noExternal: true,
     },
     plugins: [
       tailwindcss(),
