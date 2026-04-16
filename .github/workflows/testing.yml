@@ -16,7 +16,7 @@ concurrency:
 jobs:
   ci-pipeline:
     env:
-      HAS_DB_SECRETS: ${{ secrets.DATABASE_TOKEN_READONLY != '' }}
+      HAS_DB_SECRETS: ${{ secrets.DATABASE_TOKEN_READONLY != '' && secrets.DATABASE_URL != '' && secrets.REDIS_URL != '' }}
 
     runs-on: ubuntu-latest
     steps:
@@ -62,14 +62,6 @@ jobs:
 
       - name: Drizzle DB check
         run: pnpm drizzle-kit check
-
-      - name: Drizzle DB check
-        if: env.HAS_DB_SECRETS == 'true'
-        run: pnpm drizzle-kit push --strict --verbose
-        env:
-          DATABASE_TOKEN: ${{ secrets.DATABASE_TOKEN_READONLY }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          REDIS_URL: ${{ secrets.REDIS_URL }}
 
       - name: Run unit tests
         run: pnpm vitest run --passWithNoTests
