@@ -10,7 +10,7 @@ export default function CustomInputPassword(props: CustomInputProps){
             h-15 w-80
             justify-center
             md:w-120 ">
-            <input type="password" placeholder="" required name={props.name} className="
+            <input type="password" placeholder="" id={props.name} required name={props.name} className="
                 focus:outline-none
                 peer
                 h-full w-full rounded-xl
@@ -19,7 +19,7 @@ export default function CustomInputPassword(props: CustomInputProps){
                 border
                 focus:border-2 focus:border-[#50be91]"/>
 
-            <label className="
+            <label htmlFor={props.name} className="
                 absolute left-4 bottom-4.5
                 font-bold
                 transition-all duration-150
