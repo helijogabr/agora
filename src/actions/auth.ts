@@ -1,6 +1,7 @@
 import { ActionError, defineAction } from "astro:actions";
 import { z } from "astro/zod";
 import { compare, hash } from "bcrypt-ts";
+import { sql } from "drizzle-orm";
 import { db, User } from "../db";
 
 export const createUserForm = defineAction({
@@ -20,7 +21,7 @@ export const createUserForm = defineAction({
         name: username,
       },
       extras: {
-        "1": (_, { sql }) => sql`1`,
+        "1": sql`1`,
       },
     });
 

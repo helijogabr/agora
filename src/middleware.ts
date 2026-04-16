@@ -2,7 +2,7 @@ import { getActionContext } from "astro:actions";
 import { CACHE_VERSION } from "astro:env/server";
 import { defineMiddleware } from "astro:middleware";
 import type { APIContext } from "astro";
-import { db } from "@/db";
+import { db, kv } from "@/db";
 import { session } from "./userStore";
 
 const unprotectedPaths = new Set(["/login", "/register"]);
@@ -79,15 +79,20 @@ export const onRequest = defineMiddleware(async (context, next) => {
     },
   };
 
-  let [updatedAt, userId, user] = await Promise.all([
-    context.session?.get("updatedAt"),
-    context.session?.get("userId"),
-    context.session?.get("user"),
-  ]);
-
+  const userId = await context.session?.get("userId");
   if (!userId) return redirect(context, isHtml.get);
 
-  if (!user || !updatedAt) {
+  const userInfo = (await kv.get(`user:${userId}`, "json")) as {
+    name: string;
+    city: string;
+    role?: "admin" | undefined;
+    updatedAt: number;
+  } | null;
+
+  let user: { name: string; city: string; role?: "admin" | undefined };
+  let updatedAt: number;
+
+  if (!userInfo) {
     const dbUser = await db.query.User.findFirst({
       columns: {
         name: true,
@@ -115,17 +120,19 @@ export const onRequest = defineMiddleware(async (context, next) => {
     context.session?.set("userId", userId, {
       ttl: 1000 * 60 * 60 * 24, // 1 day
     });
-    context.session?.set("user", user, {
-      ttl: 1000 * 60 * 60 * 24, // 1 day
-    });
-    context.session?.set("updatedAt", updatedAt, {
-      ttl: 1000 * 60 * 60 * 24, // 1 day
-    });
-  }
+    context.locals.cfContext.waitUntil(
+      kv.put(`user:${userId}`, JSON.stringify({ updatedAt, ...user }), {
+        expirationTtl: 60 * 60 * 24, // 1 day
+      }),
+    );
+  } else {
+    user = {
+      name: userInfo.name,
+      city: userInfo.city,
+      role: userInfo.role,
+    };
 
-  if (!user || !updatedAt) {
-    context.session?.destroy();
-    return redirect(context, isHtml.get);
+    updatedAt = userInfo.updatedAt;
   }
 
   const locale = context.preferredLocale || context.currentLocale || "pt-BR";
@@ -159,5 +166,5 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return next();
   }
 
-  return session.run(context.locals.user.info, () => next());
+  return session.run(context.locals.user.info, next);
 });
