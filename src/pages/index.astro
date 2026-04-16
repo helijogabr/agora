@@ -4,12 +4,13 @@ import Feed from "@components/Feed";
 import NewPost from "@components/NewPost";
 import Layout from "@layouts/Layout.astro";
 
+
 const { data: posts, error } = await Astro.callAction(actions.getPosts, {
   limit: 2,
 });
 ---
 
-<Layout title="Feed">
+<Layout title="Feed" showNav={true}>
   <!-- centered bold text -->
   <div class="flex flex-col items-center gap-4 py-8">
     <h1 class="text-2xl font-bold">Ágora</h1>

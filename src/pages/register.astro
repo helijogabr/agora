@@ -1,8 +1,10 @@
 ---
 import { actions } from "astro:actions";
 import Layout from "../layouts/Layout.astro";
-
+import CustomInputText from "@components/CustomInputText";
+import CustomInputPassword from "@components/CustomInputPassword"
 const redirect = Astro.url.searchParams.get("return") ?? undefined;
+const returnTo = redirect ? `?return=${encodeURIComponent(redirect)}` : "";
 
 const result = Astro.getActionResult(actions.createUserForm);
 
@@ -11,54 +13,40 @@ if (result && !result.error) {
 }
 ---
 
-<Layout title="Cadastro">
-  <main class="flex flex-1 flex-col items-center justify-center">
+<Layout title="Cadastro" showNav={false}>
+  <main class="bg-[#50be91] flex flex-1 flex-col items-center justify-center">
     <form
       method="POST"
       action={actions.createUserForm}
-      class="flex flex-col gap-4"
+      class="bg-[#d3d3d3] shadow-2xl rounded-3xl w-9/10 h-1/2 md:w-1/2 flex flex-col items-center justify-center gap-4"
     >
       <input type="hidden" name="redirect" value={redirect} />
-      <label class="flex justify-between gap-2">
-        Usuário:
-        <input
-          type="text"
-          name="username"
-          required
-          class="rounded border border-gray-300"
-        />
-      </label>
-      <label class="flex justify-between gap-2">
-        Senha:
-        <input
-          type="password"
-          name="password"
-          required
-          class="rounded border border-gray-300"
-        />
-      </label>
-      <label class="flex justify-between gap-2">
-        Cidade:
-        <input
-          type="text"
-          name="city"
-          required
-          class="rounded border border-gray-300"
-        />
-      </label>
+      
+      <CustomInputText title="Usuário" name="username"></CustomInputText>
+      <CustomInputPassword title="Senha" name="password"></CustomInputPassword>
+      <CustomInputText title="Cidade" name="city"></CustomInputText>
+      <div class="h-8 w-8/10 flex items-center justify-center font-bold">
+        {
+          result && result.error && (
+            <p style={{ color: "red" }}>{result.error.message}</p>
+          )
+        }
+      </div>
       <button
         type="submit"
-        class="mt-2 cursor-pointer rounded border border-gray-300 bg-gray-200 p-1 hover:bg-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
-        >Cadastrar</button
+        class="
+          cursor-pointer rounded-4xl
+          w-40 h-15 bg-[#50be91]
+          font-bold text-[#1e4937]
+          hover:bg-[#50be90d3] hover:text-[#1e4937cb]
+          dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"        >Cadastrar</button
       >
+      <div class="flex flex-row gap-1">
+        <h1>Já possui uma conta?</h1>
+        <a href=`/login${returnTo}` class="font-bold text-[#3d9470]">Entrar</a>
+      </div>
     </form>
 
-    <div>
-      {
-        result && result.error && (
-          <p style={{ color: "red" }}>{result.error.message}</p>
-        )
-      }
-    </div>
+    
   </main>
 </Layout>
