@@ -14,11 +14,11 @@ if (result && !result.error) {
 ---
 
 <Layout title="Cadastro" showNav={false}>
-  <main class="bg-[#50be91] flex flex-1 flex-col items-center justify-center">
+  <main class="bg-[#50be91] dark:bg-[#1e4937] flex flex-1 flex-col items-center justify-center">
     <form
       method="POST"
       action={actions.createUserForm}
-      class="bg-[#d3d3d3] shadow-2xl rounded-3xl w-9/10 h-1/2 md:w-1/2 flex flex-col items-center justify-center gap-4"
+      class="bg-[#d3d3d3] dark:bg-gray-900 shadow-2xl rounded-3xl w-9/10 h-1/2 md:w-1/2 flex flex-col items-center justify-center gap-4"
     >
       <input type="hidden" name="redirect" value={redirect} />
       
@@ -37,10 +37,10 @@ if (result && !result.error) {
         class="
           cursor-pointer rounded-4xl
           w-40 h-15 bg-[#50be91]
-          font-bold text-[#1e4937]
-          hover:bg-[#50be90d3] hover:text-[#1e4937cb]
-          dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"        >Cadastrar</button
-      >
+          font-bold text-[#1e4937] text-white
+          hover:bg-[#50be90d3] hover:text-[#1e4937cb] dark:bg-[#327c5d]"
+        >Cadastrar
+      </button>
       <div class="flex flex-row gap-1">
         <h1>Já possui uma conta?</h1>
         <a href=`/login${returnTo}` class="font-bold text-[#3d9470]">Entrar</a>
