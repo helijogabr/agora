@@ -1,7 +1,10 @@
 import bcrypt from "bcrypt";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
-import { reset, seed } from "drizzle-seed";
-import * as schema from "./schema";
+import { seed } from "drizzle-seed";
+import * as relations from "./relations";
+import * as tables from "./schema";
+
+const schema = { ...tables, ...relations };
 
 function getDateHoursAgo(hours: number) {
   const date = new Date();
@@ -13,9 +16,7 @@ function getDateHoursAgo(hours: number) {
 const { User, Post } = schema;
 
 // https://astro.build/db/seed
-export default async (db: LibSQLDatabase) => {
-  await reset(db, schema);
-
+export async function seeder(db: LibSQLDatabase) {
   await seed(db, schema).refine((f) => ({
     User: {
       columns: {
@@ -29,16 +30,17 @@ export default async (db: LibSQLDatabase) => {
           { weight: 0.9, value: f.default({ defaultValue: "user" }) },
         ]),
       },
+      count: 20,
     },
     Post: {
       columns: {
         title: f.loremIpsum({ sentencesCount: 1 }),
         content: f.loremIpsum({ sentencesCount: 3 }),
       },
-      count: 10,
+      count: 50,
     },
     Likes: {
-      count: 10,
+      count: 5,
     },
   }));
 
@@ -73,4 +75,4 @@ export default async (db: LibSQLDatabase) => {
       updatedAt: getDateHoursAgo(3),
     },
   ]);
-};
+}

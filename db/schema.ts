@@ -25,30 +25,37 @@ export const User = sqliteTable("users", {
   }),
 });
 
-export const Post = sqliteTable("posts", {
-  id: t.integer().primaryKey(),
-  title: t.text().notNull(),
-  content: t.text().notNull(),
-  authorId: t
-    .integer()
-    .notNull()
-    .references(() => User.id, {
-      onDelete: "cascade",
-    }),
-  createdAt: t
-    .integer({
-      mode: "timestamp",
-    })
-    .notNull()
-    .default(sql`(unixepoch())`),
-  updatedAt: t
-    .integer({
-      mode: "timestamp",
-    })
-    .notNull()
-    .default(sql`(unixepoch())`)
-    .$onUpdate(() => new Date()),
-});
+export const Post = sqliteTable(
+  "posts",
+  {
+    id: t.integer().primaryKey(),
+    title: t.text().notNull(),
+    content: t.text().notNull(),
+    authorId: t
+      .integer()
+      .notNull()
+      .references(() => User.id, {
+        onDelete: "cascade",
+      }),
+    createdAt: t
+      .integer({
+        mode: "timestamp",
+      })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    updatedAt: t
+      .integer({
+        mode: "timestamp",
+      })
+      .notNull()
+      .default(sql`(unixepoch())`)
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    t.index("author_id_index").on(table.authorId),
+    t.index("created_at_index").on(table.updatedAt),
+  ],
+);
 
 export const Likes = sqliteTable(
   "likes",

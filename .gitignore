@@ -25,3 +25,7 @@ pnpm-debug.log*
 .vercel
 
 db/dev.db
+
+.wrangler
+
+worker-configuration.d.ts

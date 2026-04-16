@@ -1,7 +1,8 @@
 import { ActionError, defineAction } from "astro:actions";
+import { waitUntil } from "@vercel/functions";
 import { z } from "astro/zod";
 import { and, eq, exists } from "drizzle-orm";
-import { db, Likes, Post } from "../db";
+import { db, kv, Likes, Post } from "../db";
 
 async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -56,6 +57,9 @@ export const getPosts = defineAction({
           lt: cursor ?? undefined,
         },
       },
+      orderBy: {
+        updatedAt: "desc",
+      },
     });
 
     const extra = posts.length > limit ? posts.pop() : undefined;
@@ -92,23 +96,23 @@ export const createPost = defineAction({
       updatedAt: now,
     });
 
-    if (!res.lastInsertRowid) {
+    const postId = res.lastInsertRowid;
+
+    if (!postId) {
       throw new ActionError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Falha ao criar post.",
       });
     }
 
-    return {
-      success: true,
-      postId: res.lastInsertRowid,
-    };
+    waitUntil(kv.set(`post:likes:${postId}`, "0", "EX", 60 * 60));
+    return { success: true, postId };
   },
 });
 
 export const deletePost = defineAction({
   input: z.object({
-    postId: z.number().int().positive(),
+    postId: z.int().nonnegative(),
   }),
   handler: async ({ postId }, { locals }) => {
     if (import.meta.env.DEV) {
@@ -142,7 +146,7 @@ export const deletePost = defineAction({
 
 export const likePost = defineAction({
   input: z.object({
-    postId: z.number(),
+    postId: z.int().nonnegative(),
     liked: z.boolean(),
   }),
   handler: async ({ postId, liked }, { locals }) => {
@@ -150,38 +154,40 @@ export const likePost = defineAction({
       await sleep(500);
     }
 
+    const TTL = 60 * 60; // 1 hour
     const { id: userId } = locals.user;
 
-    let isLiked: boolean;
+    const changedPromise = liked
+      ? db
+          .insert(Likes)
+          .values({
+            userId,
+            postId,
+          })
+          .onConflictDoNothing()
+          .then((res) => res.rowsAffected > 0)
+      : db
+          .delete(Likes)
+          .where(and(eq(Likes.userId, userId), eq(Likes.postId, postId)))
+          .then((res) => res.rowsAffected > 0);
 
-    if (liked) {
-      const res = await db
-        .insert(Likes)
-        .values({
-          userId,
-          postId,
-        })
-        .onConflictDoNothing()
-        .then((res) => res.rowsAffected);
+    const likesPromise = kv.get(`post:likes:${postId}`);
 
-      // if changed, post is liked.
-      isLiked = res > 0;
-    } else {
-      await db
-        .delete(Likes)
-        .where(and(eq(Likes.userId, userId), eq(Likes.postId, postId)))
-        .then((res) => res.rowsAffected);
+    let [changed, likes]: [boolean, string | number | null] = await Promise.all(
+      [changedPromise, likesPromise],
+    );
 
-      // delete fails silently, its never liked
-      isLiked = false;
+    if (likes === null || (Number(likes) <= 0 && changed && !liked)) {
+      likes = await db.$count(Likes, eq(Likes.postId, postId));
+      await kv.set(`post:likes:${postId}`, String(likes), "EX", TTL, "NX");
+    } else if (changed) {
+      likes = liked
+        ? await kv.incr(`post:likes:${postId}`)
+        : await kv.decr(`post:likes:${postId}`);
+
+      waitUntil(kv.expire(`post:likes:${postId}`, TTL));
     }
 
-    const res = await db.$count(Likes, eq(Likes.postId, postId));
-
-    return {
-      success: true,
-      isLiked,
-      likes: res ?? 0,
-    };
+    return { success: true, isLiked: liked, likes: Math.max(0, Number(likes)) };
   },
 });

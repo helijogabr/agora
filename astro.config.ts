@@ -1,14 +1,11 @@
-import { rm } from "node:fs/promises";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import vercel from "@astrojs/vercel";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 import icon from "astro-icon";
-import { drizzle } from "drizzle-orm/libsql";
-import { migrate } from "drizzle-orm/libsql/migrator";
+import devSeeder from "./db/kv/dev_seeder";
 import redisDriver from "./db/kv/driver";
-import seed from "./db/seed";
 
 // https://astro.build/config
 export default defineConfig({
@@ -54,34 +51,15 @@ export default defineConfig({
     },
   },
   vite: {
-    plugins: [
-      tailwindcss(),
-      {
-        name: "seed-database",
-        apply: "serve",
-        enforce: "pre",
-        async configureServer() {
-          if (!import.meta.env.DEV) return;
-
-          await rm("./db/dev.db", { force: true });
-
-          const db = drizzle({
-            connection: {
-              url: "file:./db/dev.db",
-            },
-          });
-
-          await migrate(db, { migrationsFolder: "./drizzle" });
-          await seed(db);
-        },
-      },
-    ],
+    plugins: [tailwindcss(), devSeeder()],
   },
   site: "https://todo-astro.vercel.app",
   output: "server",
   adapter: vercel(),
   session: {
     driver: redisDriver(),
+    cookie: "session",
+    ttl: 60 * 60 * 24 * 7, // 7 days
   },
   prefetch: {
     defaultStrategy: "hover",

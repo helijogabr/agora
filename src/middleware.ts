@@ -1,9 +1,10 @@
 import { getActionContext } from "astro:actions";
 import { CACHE_VERSION } from "astro:env/server";
 import { defineMiddleware } from "astro:middleware";
+import { waitUntil } from "@vercel/functions";
 import type { APIContext } from "astro";
-import { db } from "@/db";
-import { session } from "./userStore";
+import { db, kv } from "@/db";
+import { type getUser, session } from "./userStore";
 
 const unprotectedPaths = new Set(["/login", "/register"]);
 
@@ -79,15 +80,16 @@ export const onRequest = defineMiddleware(async (context, next) => {
     },
   };
 
-  let [updatedAt, userId, user] = await Promise.all([
-    context.session?.get("updatedAt"),
-    context.session?.get("userId"),
-    context.session?.get("user"),
-  ]);
-
+  const userId = await context.session?.get("userId");
   if (!userId) return redirect(context, isHtml.get);
 
-  if (!user || !updatedAt) {
+  const cache = (await kv.hgetall(`user:${userId}`)) as {
+    updatedAt: string;
+  } & ReturnType<typeof getUser>;
+  let updatedAt: number;
+  let user: App.Locals["user"]["info"];
+
+  if (!cache?.updatedAt) {
     const dbUser = await db.query.User.findFirst({
       columns: {
         name: true,
@@ -96,7 +98,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
         updatedAt: true,
       },
       where: {
-        id: userId,
+        id: userId
       },
     });
 
@@ -115,12 +117,17 @@ export const onRequest = defineMiddleware(async (context, next) => {
     context.session?.set("userId", userId, {
       ttl: 1000 * 60 * 60 * 24, // 1 day
     });
-    context.session?.set("user", user, {
-      ttl: 1000 * 60 * 60 * 24, // 1 day
-    });
-    context.session?.set("updatedAt", updatedAt, {
-      ttl: 1000 * 60 * 60 * 24, // 1 day
-    });
+
+    waitUntil(
+      kv
+        .pipeline()
+        .hset(`user:${userId}`, { ...user, updatedAt })
+        .expire(`user:${userId}`, 60 * 60 * 24)
+        .exec(),
+    );
+  } else {
+    updatedAt = Number(cache.updatedAt);
+    user = cache;
   }
 
   if (!user || !updatedAt) {
