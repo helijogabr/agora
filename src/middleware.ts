@@ -130,11 +130,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
     user = cache;
   }
 
-  if (!user || !updatedAt) {
-    context.session?.destroy();
-    return redirect(context, isHtml.get);
-  }
-
   const locale = context.preferredLocale || context.currentLocale || "pt-BR";
 
   context.locals.user = {
@@ -157,8 +152,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
       context.locals.invalidateCache = hash;
       if (cookie) context.cookies.delete("hasCache", { path: "/" });
     }
-  }
 
+  }
   if (!session) {
     console.warn(
       "Session is not available. User information will not be stored in the session.",
