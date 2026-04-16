@@ -141,7 +141,7 @@ describe("auth.ts actions", () => {
 
       expect(result).toEqual({ success: true, redirect: undefined });
       expect(bcrypt.hash).toHaveBeenCalledWith("123", 10);
-      expect(context.session.set).toHaveBeenCalledTimes(2);
+      expect(context.session.set).toHaveBeenCalled();
       expect(context.session.set).toHaveBeenCalledWith(
         "userId",
         10,

@@ -85,6 +85,7 @@ const mockQueryBuilder: MockQueryBuilder = {
   values: vi.fn().mockReturnThis(),
   onConflictDoNothing: vi.fn().mockReturnThis(),
   get: vi.fn(),
+  // biome-ignore lint/suspicious/noThenProperty: <then is used for mocking>
   then: vi.fn(function (
     this: { __resolveValue: unknown },
     callback: QueryBuilderThenCallback,
