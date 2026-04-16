@@ -1,6 +1,3 @@
-import OpenEye from "@assets/eye.svg"
-import ClosedEye from "@assets/eye-off.svg"
-
 interface CustomInputProps{
     title: string
     name: string
