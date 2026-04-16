@@ -1,8 +1,7 @@
 import { ActionError, defineAction } from "astro:actions";
-import { db, eq, User } from "astro:db";
 import { z } from "astro/zod";
-
 import bcrypt from "bcrypt";
+import { db, User } from "../db";
 
 export const createUserForm = defineAction({
   accept: "form",
@@ -15,12 +14,15 @@ export const createUserForm = defineAction({
   handler: async (input, { session, cookies, url }) => {
     const { username, city, password } = input;
 
-    const existingUser = await db
-      .select()
-      .from(User)
-      .where(eq(User.name, username))
-      .limit(1)
-      .then((rows) => rows[0]);
+    const existingUser = await db.query.User.findFirst({
+      columns: {},
+      where: {
+        name: username,
+      },
+      extras: {
+        "1": (_, { sql }) => sql`1`,
+      },
+    });
 
     if (existingUser) {
       throw new ActionError({
@@ -31,12 +33,14 @@ export const createUserForm = defineAction({
 
     const hashed = await bcrypt.hash(password, 10);
 
+    const now = new Date();
+
     const result = await db.insert(User).values({
       name: username,
       password: hashed,
       city,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: now,
+      updatedAt: now,
     });
 
     if (!result.lastInsertRowid) {
@@ -72,18 +76,18 @@ export const loginForm = defineAction({
     cookies.delete("hasCache", { path: "/" });
     session?.destroy();
 
-    const user = await db
-      .select({
-        id: User.id,
-        name: User.name,
-        password: User.password,
-        city: User.city,
-        role: User.role,
-      })
-      .from(User)
-      .where(eq(User.name, username))
-      .limit(1)
-      .then((rows) => rows[0]);
+    const user = await db.query.User.findFirst({
+      columns: {
+        id: true,
+        name: true,
+        password: true,
+        city: true,
+        role: true,
+      },
+      where: {
+        name: username,
+      },
+    });
 
     if (!user) {
       throw new ActionError({

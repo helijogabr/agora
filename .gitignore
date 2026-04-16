@@ -23,3 +23,9 @@ pnpm-debug.log*
 # jetbrains setting folder
 .idea/
 .vercel
+
+db/dev.db
+
+.wrangler
+
+worker-configuration.d.ts

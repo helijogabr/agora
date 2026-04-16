@@ -1,12 +1,6 @@
 declare namespace App {
   interface SessionData {
     userId: number;
-    updatedAt: number;
-    user: {
-      name: string;
-      city: string;
-      role?: "admin" | undefined;
-    };
   }
 
   interface Locals {

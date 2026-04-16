@@ -1,11 +1,11 @@
-import db from "@astrojs/db";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import vercel from "@astrojs/vercel";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 import icon from "astro-icon";
-import { dbDriver } from "./db/driver/config";
+import devSeeder from "./db/kv/dev_seeder";
+import redisDriver from "./db/kv/driver";
 
 // https://astro.build/config
 export default defineConfig({
@@ -15,7 +15,6 @@ export default defineConfig({
         plugins: ["babel-plugin-react-compiler"],
       },
     }),
-    db(),
     sitemap(),
     icon(),
   ],
@@ -34,16 +33,33 @@ export default defineConfig({
         type: "number",
         default: 1,
       },
+      DATABASE_URL: {
+        context: "server",
+        access: "secret",
+        type: "string",
+      },
+      DATABASE_TOKEN: {
+        context: "server",
+        access: "secret",
+        type: "string",
+      },
+      REDIS_URL: {
+        context: "server",
+        access: "secret",
+        type: "string",
+      },
     },
   },
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [tailwindcss(), devSeeder()],
   },
   site: "https://todo-astro.vercel.app",
   output: "server",
   adapter: vercel(),
   session: {
-    driver: dbDriver(),
+    driver: redisDriver(),
+    cookie: "session",
+    ttl: 60 * 60 * 24 * 7, // 7 days
   },
   prefetch: {
     defaultStrategy: "hover",

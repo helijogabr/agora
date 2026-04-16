@@ -1,9 +1,10 @@
 import { getActionContext } from "astro:actions";
-import { db, eq, User } from "astro:db";
 import { CACHE_VERSION } from "astro:env/server";
 import { defineMiddleware } from "astro:middleware";
+import { waitUntil } from "@vercel/functions";
 import type { APIContext } from "astro";
-import { session } from "./userStore";
+import { db, kv } from "@/db";
+import { type getUser, session } from "./userStore";
 
 const unprotectedPaths = new Set(["/login", "/register"]);
 
@@ -79,25 +80,27 @@ export const onRequest = defineMiddleware(async (context, next) => {
     },
   };
 
-  let [updatedAt, userId, user] = await Promise.all([
-    context.session?.get("updatedAt"),
-    context.session?.get("userId"),
-    context.session?.get("user"),
-  ]);
-
+  const userId = await context.session?.get("userId");
   if (!userId) return redirect(context, isHtml.get);
 
-  if (!user || !updatedAt) {
-    const [dbUser] = await db
-      .select({
-        name: User.name,
-        city: User.city,
-        role: User.role,
-        updatedAt: User.updatedAt,
-      })
-      .from(User)
-      .where(eq(User.id, userId))
-      .limit(1);
+  const cache = (await kv.hgetall(`user:${userId}`)) as {
+    updatedAt: string;
+  } & ReturnType<typeof getUser>;
+  let updatedAt: number;
+  let user: App.Locals["user"]["info"];
+
+  if (!cache?.updatedAt) {
+    const dbUser = await db.query.User.findFirst({
+      columns: {
+        name: true,
+        city: true,
+        role: true,
+        updatedAt: true,
+      },
+      where: {
+        id: userId
+      },
+    });
 
     if (!dbUser) {
       context.session?.destroy();
@@ -114,17 +117,17 @@ export const onRequest = defineMiddleware(async (context, next) => {
     context.session?.set("userId", userId, {
       ttl: 1000 * 60 * 60 * 24, // 1 day
     });
-    context.session?.set("user", user, {
-      ttl: 1000 * 60 * 60 * 24, // 1 day
-    });
-    context.session?.set("updatedAt", updatedAt, {
-      ttl: 1000 * 60 * 60 * 24, // 1 day
-    });
-  }
 
-  if (!user || !updatedAt) {
-    context.session?.destroy();
-    return redirect(context, isHtml.get);
+    waitUntil(
+      kv
+        .pipeline()
+        .hset(`user:${userId}`, { ...user, updatedAt })
+        .expire(`user:${userId}`, 60 * 60 * 24)
+        .exec(),
+    );
+  } else {
+    updatedAt = Number(cache.updatedAt);
+    user = cache;
   }
 
   const locale = context.preferredLocale || context.currentLocale || "pt-BR";
@@ -149,8 +152,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
       context.locals.invalidateCache = hash;
       if (cookie) context.cookies.delete("hasCache", { path: "/" });
     }
-  }
 
+  }
   if (!session) {
     console.warn(
       "Session is not available. User information will not be stored in the session.",

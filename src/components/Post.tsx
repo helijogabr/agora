@@ -1,9 +1,10 @@
 import type { PostData } from "./Feed";
 import PostBar from "./PostBar";
 
-interface Props extends Omit<PostData, "createdAt" | "updatedAt"> {
+interface Props extends Omit<PostData, "createdAt" | "updatedAt" | "author"> {
   createdAt: string;
   updatedAt: string;
+  author: string;
 }
 
 function PostContent({

@@ -1,17 +1,8 @@
 import { ActionError, defineAction } from "astro:actions";
-import {
-  and,
-  count,
-  db,
-  desc,
-  eq,
-  exists,
-  Likes,
-  lt,
-  Post,
-  User,
-} from "astro:db";
+import { waitUntil } from "@vercel/functions";
 import { z } from "astro/zod";
+import { and, eq, exists } from "drizzle-orm";
+import { db, kv, Likes, Post } from "../db";
 
 async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -22,7 +13,9 @@ export const getPosts = defineAction({
     limit: z.int().nonnegative().max(50).default(10),
     cursor: z
       .union([z.date(), z.iso.datetime()])
-      .transform((value) => (value ? new Date(value) : value))
+      .transform((value) =>
+        typeof value === "string" ? new Date(value) : value,
+      )
       .nullable()
       .optional(),
   }),
@@ -33,29 +26,41 @@ export const getPosts = defineAction({
 
     const user = locals.user;
 
-    const posts = await db
-      .select({
-        id: Post.id,
-        title: Post.title,
-        content: Post.content,
-        createdAt: Post.createdAt,
-        updatedAt: Post.updatedAt,
-        author: User.name,
-        likes: count(Likes.post),
-        liked: exists(
-          db
-            .select()
-            .from(Likes)
-            .where(and(eq(Likes.user, user.id), eq(Likes.post, Post.id))),
-        ).mapWith((exists) => Boolean(+exists)),
-      })
-      .from(Post)
-      .innerJoin(User, eq(Post.author, User.id))
-      .leftJoin(Likes, eq(Likes.post, Post.id))
-      .where(cursor ? lt(Post.updatedAt, new Date(cursor)) : undefined)
-      .orderBy(desc(Post.updatedAt))
-      .groupBy(Post.id, User.id)
-      .limit(limit + 1);
+    const posts = await db.query.Post.findMany({
+      columns: {
+        id: true,
+        title: true,
+        content: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      with: {
+        author: {
+          columns: {
+            name: true,
+          },
+        },
+      },
+      extras: {
+        likes: (t) => db.$count(Likes, eq(Likes.postId, t.id)),
+        liked: (t, { sql }) =>
+          exists(
+            db
+              .select({ n: sql`1` })
+              .from(Likes)
+              .where(and(eq(Likes.userId, user.id), eq(Likes.postId, t.id))),
+          ).mapWith(Boolean),
+      },
+      limit,
+      where: {
+        updatedAt: {
+          lt: cursor ?? undefined,
+        },
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
 
     const extra = posts.length > limit ? posts.pop() : undefined;
     const last = posts.at(-1);
@@ -81,31 +86,33 @@ export const createPost = defineAction({
 
     const { id: userId } = locals.user;
 
+    const now = new Date();
+
     const res = await db.insert(Post).values({
       title,
       content,
-      author: userId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      authorId: userId,
+      createdAt: now,
+      updatedAt: now,
     });
 
-    if (!res.lastInsertRowid) {
+    const postId = res.lastInsertRowid;
+
+    if (!postId) {
       throw new ActionError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Falha ao criar post.",
       });
     }
 
-    return {
-      success: true,
-      postId: res.lastInsertRowid,
-    };
+    waitUntil(kv.set(`post:likes:${postId}`, "0", "EX", 60 * 60));
+    return { success: true, postId };
   },
 });
 
 export const deletePost = defineAction({
   input: z.object({
-    postId: z.number().int().positive(),
+    postId: z.int().nonnegative(),
   }),
   handler: async ({ postId }, { locals }) => {
     if (import.meta.env.DEV) {
@@ -117,7 +124,7 @@ export const deletePost = defineAction({
     const where =
       user.info.role === "admin"
         ? eq(Post.id, postId)
-        : and(eq(Post.id, postId), eq(Post.author, user.id));
+        : and(eq(Post.id, postId), eq(Post.authorId, user.id));
 
     const res = await db
       .delete(Post)
@@ -139,7 +146,7 @@ export const deletePost = defineAction({
 
 export const likePost = defineAction({
   input: z.object({
-    postId: z.number(),
+    postId: z.int().nonnegative(),
     liked: z.boolean(),
   }),
   handler: async ({ postId, liked }, { locals }) => {
@@ -147,43 +154,40 @@ export const likePost = defineAction({
       await sleep(500);
     }
 
+    const TTL = 60 * 60; // 1 hour
     const { id: userId } = locals.user;
 
-    let isLiked: boolean;
+    const changedPromise = liked
+      ? db
+          .insert(Likes)
+          .values({
+            userId,
+            postId,
+          })
+          .onConflictDoNothing()
+          .then((res) => res.rowsAffected > 0)
+      : db
+          .delete(Likes)
+          .where(and(eq(Likes.userId, userId), eq(Likes.postId, postId)))
+          .then((res) => res.rowsAffected > 0);
 
-    if (liked) {
-      const res = await db
-        .insert(Likes)
-        .values({
-          user: userId,
-          post: postId,
-          createdAt: new Date(),
-        })
-        .onConflictDoNothing()
-        .then((res) => res.rowsAffected);
+    const likesPromise = kv.get(`post:likes:${postId}`);
 
-      // if changed, post is liked.
-      isLiked = res > 0;
-    } else {
-      await db
-        .delete(Likes)
-        .where(and(eq(Likes.user, userId), eq(Likes.post, postId)))
-        .then((res) => res.rowsAffected);
+    let [changed, likes]: [boolean, string | number | null] = await Promise.all(
+      [changedPromise, likesPromise],
+    );
 
-      // delete fails silently, its never liked
-      isLiked = false;
+    if (likes === null || (Number(likes) <= 0 && changed && !liked)) {
+      likes = await db.$count(Likes, eq(Likes.postId, postId));
+      await kv.set(`post:likes:${postId}`, String(likes), "EX", TTL, "NX");
+    } else if (changed) {
+      likes = liked
+        ? await kv.incr(`post:likes:${postId}`)
+        : await kv.decr(`post:likes:${postId}`);
+
+      waitUntil(kv.expire(`post:likes:${postId}`, TTL));
     }
 
-    const res = await db
-      .select({ count: count() })
-      .from(Likes)
-      .where(eq(Likes.post, postId))
-      .get();
-
-    return {
-      success: true,
-      isLiked,
-      likes: res?.count ?? 0,
-    };
+    return { success: true, isLiked: liked, likes: Math.max(0, Number(likes)) };
   },
 });

@@ -23,7 +23,7 @@ export default function Feed({
         queryFn: ({ pageParam: cursor }) =>
           actions.getPosts.orThrow({
             cursor,
-            limit: 2,
+            limit: 10,
           }),
         select: (data) => {
           const locale = getUser()?.locale;
@@ -62,6 +62,7 @@ export default function Feed({
               <li key={post.id}>
                 <Post
                   {...post}
+                  author={post.author.name}
                   createdAt={post.createdAt}
                   updatedAt={post.updatedAt}
                   liked={!!post.liked}
