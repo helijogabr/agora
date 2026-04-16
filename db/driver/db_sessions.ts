@@ -30,7 +30,6 @@ export default function (_: unknown): SessionDriver {
           set: {
             value,
           },
-
         });
     },
     async removeItem(key) {

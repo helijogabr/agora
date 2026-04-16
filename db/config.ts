@@ -12,6 +12,8 @@ const User = defineTable({
       enum: ["admin"],
       optional: true,
     }),
+    createdAt: column.date(),
+    updatedAt: column.date(),
   },
 });
 

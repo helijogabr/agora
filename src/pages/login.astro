@@ -1,7 +1,9 @@
 ---
 import { actions } from "astro:actions";
 import Layout from "../layouts/Layout.astro";
-
+import Logo from "@assets/agora.svg"
+import CustomInputText from "@components/CustomInputText";
+import CustomInputPassword from "@components/CustomInputPassword"
 const redirect = Astro.url.searchParams.get("return") ?? undefined;
 const returnTo = redirect ? `?return=${encodeURIComponent(redirect)}` : "";
 
@@ -12,58 +14,64 @@ if (result && !result.error) {
 }
 ---
 
-<Layout title="Login">
-  <main class="flex flex-1 flex-col items-center justify-center">
-    <form method="POST" action={actions.loginForm} class="flex flex-col gap-4">
-      <input type="hidden" name="redirect" value={redirect} />
-      <label class="flex justify-between gap-2">
-        Usuário:
-        <input
-          type="text"
-          name="username"
-          required
-          class="rounded border border-gray-300"
-        />
-      </label>
-      <label class="flex justify-between gap-2">
-        Senha:
-        <input
-          type="password"
-          name="password"
-          required
-          class="rounded border border-gray-300"
-        />
-      </label>
-      <button
-        type="submit"
-        class="mt-2 cursor-pointer rounded border border-gray-300 bg-gray-200 p-1 hover:bg-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
-        >Entrar</button
-      >
-      <a
-        href={`/register${returnTo}`}
-        class="cursor-pointer rounded border border-gray-300 bg-gray-200 p-1 text-center hover:bg-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
-      >
-        Criar conta</a
-      >
-    </form>
-
-    <div class="mt-4 flex flex-col items-center gap-2">
-      {
-        !!result?.error &&
-          (result.error.code === "NOT_FOUND" ? (
-            <p class="text-red-600">
-              Usuário não encontrado.
-              <a
-                href={`/register${returnTo}`}
-                class="ml-1 text-blue-600 underline"
-              >
-                Cadastre-se
-              </a>
-            </p>
-          ) : (
-            <p class="text-red-600">Erro: {result.error.message}</p>
-          ))
-      }
+<Layout title="Login" showNav={false}>
+  <main class="
+    flex flex-1 flex-col
+    items-center justify-around
+    md:flex-row
+    md:divide-x
+    ">
+    <div class="flex flex-col justify-center items-center md:h-full md:w-6/10">
+      <!-- e uns blablablas -->
+      <Logo class="fill-current text-[#50be91]" />
+      <h1 class="font-bold">Tem que reclamar mesmo</h1>
+    </div>
+    <div class="flex flex-col justify-center items-center">
+      <form method="POST" action={actions.loginForm} class="flex flex-col items-center gap-4">
+        <input type="hidden" name="redirect" value={redirect} />
+        <CustomInputText title="Usuário" name="username"></CustomInputText>
+        <CustomInputPassword title="Senha" name="password"></CustomInputPassword>
+        <button
+          type="submit"
+          class="
+            cursor-pointer rounded-4xl
+            w-40 h-15 bg-[#50be91]
+            font-bold text-[#1e4937]
+            hover:bg-[#50be90d3] hover:text-[#1e4937cb]
+            dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
+          >Entrar</button
+        >
+        <a
+          href={`/register${returnTo}`}
+          class="
+            cursor-pointer rounded-4xl
+            w-40 h-15 border-[#50be91] border
+            font-bold text-[#1e4937] flex flex-col justify-center items-center
+            hover:bg-[#b3b3b362] hover:text-[#1e4937cb]
+            dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
+        >
+          Criar conta</a
+        >
+      </form>
+  
+      <div class="mt-4 flex flex-col items-center gap-2 font-bold">
+        {
+          !!result?.error &&
+            (result.error.code === "NOT_FOUND" ? (
+              <p class="text-red-600">
+                Usuário não encontrado.
+                <a
+                  href={`/register${returnTo}`}
+                  class="ml-1 text-blue-600 underline"
+                >
+                  Cadastre-se
+                </a>
+              </p>
+            ) : (
+              <p class="text-red-600">Erro: {result.error.message}</p>
+            ))
+        }
+      </div>
     </div>
   </main>
 </Layout>
