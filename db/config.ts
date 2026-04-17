@@ -27,6 +27,7 @@ const Post = defineTable({
     }),
     postType: column.number({
       references: () => PostType.columns.id,
+      default: undefined,
     }),
     zipCode: column.text({ optional: true }),
     city: column.text({ optional: true }),
