@@ -13,7 +13,18 @@ type PostsContext = {
 };
 
 type GetPostsInput = { limit: number; cursor: Date | string | null };
-type CreatePostInput = { title: string; content: string };
+type CreatePostInput = {
+  title: string;
+  content: string;
+  postType: number;
+  tagIds?: number[];
+  informAddress?: boolean;
+  zipCode?: string;
+  city?: string;
+  district?: string;
+  street?: string;
+  number?: string;
+};
 type DeletePostInput = { postId: number };
 type LikePostInput = { postId: number; liked: boolean };
 
@@ -58,6 +69,7 @@ type MockQueryBuilder = {
   values: ReturnType<typeof vi.fn>;
   onConflictDoNothing: ReturnType<typeof vi.fn>;
   get: ReturnType<typeof vi.fn>;
+  all: ReturnType<typeof vi.fn>;
   then: ReturnType<typeof vi.fn>;
 };
 
@@ -85,6 +97,7 @@ const mockQueryBuilder: MockQueryBuilder = {
   values: vi.fn().mockReturnThis(),
   onConflictDoNothing: vi.fn().mockReturnThis(),
   get: vi.fn(),
+  all: vi.fn(),
   // biome-ignore lint/suspicious/noThenProperty: <then is used for mocking>
   then: vi.fn(function (
     this: { __resolveValue: unknown },
@@ -115,7 +128,16 @@ vi.mock("astro:db", () => ({
     createdAt: "Post.createdAt",
     updatedAt: "Post.updatedAt",
     author: "Post.author",
+    postType: "Post.postType",
+    zipCode: "Post.zipCode",
+    city: "Post.city",
+    district: "Post.district",
+    street: "Post.street",
+    number: "Post.number",
   },
+  PostType: { id: "PostType.id", name: "PostType.name" },
+  PostTag: { post: "PostTag.post", tag: "PostTag.tag" },
+  Tag: { id: "Tag.id", name: "Tag.name" },
   User: { id: "User.id", name: "User.name" },
   Likes: {
     post: "Likes.post",
@@ -138,6 +160,7 @@ describe("posts.ts actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockQueryBuilder.__resolveValue = undefined;
+    mockQueryBuilder.all.mockResolvedValue([]);
   });
 
   describe("getPosts", () => {
@@ -157,8 +180,8 @@ describe("posts.ts actions", () => {
 
       expect(result.posts).toHaveLength(2);
       expect(result.posts).toEqual([
-        { id: 1, updatedAt: d1 },
-        { id: 2, updatedAt: d2 },
+        { id: 1, updatedAt: d1, tags: [] },
+        { id: 2, updatedAt: d2, tags: [] },
       ]);
       expect(result.nextCursor).toEqual(d2);
     });
@@ -183,6 +206,8 @@ describe("posts.ts actions", () => {
       const input: CreatePostInput = {
         title: "Astro Rocks",
         content: "Awesome",
+        postType: 1,
+        tagIds: [],
       };
       const result = await createPostAction.handler(input, getBaseContext());
 
@@ -194,12 +219,27 @@ describe("posts.ts actions", () => {
 
       await expect(
         createPostAction.handler(
-          { title: "Fail", content: "..." },
+          { title: "Fail", content: "...", postType: 1, tagIds: [] },
           getBaseContext(),
         ),
       ).rejects.toMatchObject({
         code: "INTERNAL_SERVER_ERROR",
       });
+    });
+
+    it("deve reprovar a entrada quando postType não for informado", () => {
+      const schema = (
+        createPost as unknown as {
+          input: { safeParse: (data: unknown) => { success: boolean } };
+        }
+      ).input;
+
+      const result = schema.safeParse({
+        title: "Post sem categoria",
+        content: "Conteudo",
+      });
+
+      expect(result.success).toBe(false);
     });
   });
 
