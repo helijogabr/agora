@@ -207,6 +207,10 @@ export const deletePost = defineAction({
         ? eq(Post.id, postId)
         : and(eq(Post.id, postId), eq(Post.author, user.id));
 
+    await db.delete(Likes).where(eq(Likes.post, postId));
+
+    await db.delete(PostTag).where(eq(PostTag.post, postId));
+
     const res = await db
       .delete(Post)
       .where(where)
