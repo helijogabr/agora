@@ -25,8 +25,44 @@ const Post = defineTable({
     author: column.number({
       references: () => User.columns.id,
     }),
+    postType: column.number({
+      references: () => PostType.columns.id,
+    }),
+    zipCode: column.text({ optional: true }),
+    city: column.text({ optional: true }),
+    district: column.text({ optional: true }),
+    street: column.text({ optional: true }),
+    number: column.text({ optional: true }),
     createdAt: column.date(),
     updatedAt: column.date(),
+  },
+});
+
+const PostType = defineTable({
+  columns: {
+    id: column.number({ primaryKey: true }),
+    name: column.text({
+      unique: true,
+    }),
+  },
+});
+
+const PostTag = defineTable({
+  columns: {
+    post: column.number({
+      references: () => Post.columns.id,
+    }),
+    tag: column.number({
+      references: () => Tag.columns.id,
+    }),
+  },
+  indexes: [{ on: ["post", "tag"], unique: true }],
+});
+
+const Tag = defineTable({
+  columns: {
+    id: column.number({ primaryKey: true }),
+    name: column.text({ unique: true }),
   },
 });
 
@@ -54,5 +90,5 @@ const Likes = defineTable({
 
 // https://astro.build/db/config
 export default defineDb({
-  tables: { User, Post, Session, Likes },
+  tables: { User, Post, PostType, PostTag, Tag, Session, Likes },
 });

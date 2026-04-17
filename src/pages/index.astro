@@ -1,7 +1,7 @@
 ---
 import { actions } from "astro:actions";
 import Feed from "@components/Feed";
-import NewPost from "@components/NewPost";
+import LateralMenu from "@components/LateralMenu";
 import Layout from "@layouts/Layout.astro";
 
 
@@ -14,7 +14,9 @@ const { data: posts, error } = await Astro.callAction(actions.getPosts, {
   <div class="flex flex-col items-center gap-4 py-8">
     <h1 class="text-2xl font-bold">Ágora</h1>
 
-    <NewPost client:load />
+    <div class="w-full max-w-lg">
+      <LateralMenu client:load />
+    </div>
 
     {error && <p class="error">{error.message}</p>}
     {posts && <Feed {...posts} client:idle />}
