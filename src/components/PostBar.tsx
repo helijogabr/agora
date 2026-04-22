@@ -9,25 +9,20 @@ type Props = {
   id: PostData["id"];
   author: string;
   liked: boolean;
-  likes: number;
+  likesCount: number;
 };
 
-export default function PostBar({
-  id,
-  liked,
-  likes,
-  author,
-}: Pick<Props, "id" | "liked" | "likes" | "author">) {
+export default function PostBar({ id, liked, likesCount, author }: Props) {
   const user = getUser();
 
   const deletePost = useMutation(
     {
       mutationFn: actions.deletePost.orThrow,
       onMutate: async ({ postId }) => {
-        await queryClient.cancelQueries({ queryKey: ["posts"] });
-        const previousPosts = queryClient.getQueryData(["posts"]);
+        await queryClient.get.cancelQueries({ queryKey: ["posts"] });
+        const previousPosts = queryClient.get.getQueryData(["posts"]);
 
-        queryClient.setQueryData(
+        queryClient.get.setQueryData(
           ["posts"],
           (
             old: InfiniteData<{ posts: PostData[]; nextCursor?: Date | null }>,
@@ -47,28 +42,28 @@ export default function PostBar({
         return { previousPosts };
       },
       onError: (_, _1, onMutateResult) => {
-        queryClient.setQueryData(
+        queryClient.get.setQueryData(
           ["posts"],
           () => onMutateResult?.previousPosts,
         );
       },
       onSettled: () => {
-        queryClient.invalidateQueries({ queryKey: ["posts"] });
+        queryClient.get.invalidateQueries({ queryKey: ["posts"] });
       },
     },
-    queryClient,
+    queryClient.get,
   );
 
   const likePost = useMutation(
     {
       mutationFn: actions.likePost.orThrow,
       onMutate: async ({ postId, liked }) => {
-        await queryClient.cancelQueries({ queryKey: ["posts"] });
+        await queryClient.get.cancelQueries({ queryKey: ["posts"] });
 
         setIsLiked(liked);
         setLikeCount((count) => count + (liked ? 1 : -1));
 
-        const previousPosts = queryClient.getQueryData(["posts"]);
+        const previousPosts = queryClient.get.getQueryData(["posts"]);
 
         return { previousPosts, postId, liked };
       },
@@ -78,21 +73,21 @@ export default function PostBar({
       },
       onError: (_, _1, onMutateResult) => {
         setIsLiked(liked);
-        setLikeCount(likes);
-        queryClient.setQueryData(
+        setLikeCount(likesCount);
+        queryClient.get.setQueryData(
           ["posts"],
           () => onMutateResult?.previousPosts,
         );
       },
       onSettled: () => {
-        queryClient.invalidateQueries({ queryKey: ["posts"] });
+        queryClient.get.invalidateQueries({ queryKey: ["posts"] });
       },
     },
-    queryClient,
+    queryClient.get,
   );
 
   const [isLiked, setIsLiked] = useState(liked);
-  const [likeCount, setLikeCount] = useState(likes);
+  const [likeCount, setLikeCount] = useState(likesCount);
 
   return (
     <div className="flex items-center justify-between">

@@ -46,8 +46,8 @@ export const Post = sqliteTable("posts", {
       mode: "timestamp",
     })
     .notNull()
-    .default(sql`(unixepoch())`)
-    .$onUpdate(() => new Date()),
+    .default(sql`(unixepoch())`),
+  likesCount: t.integer().notNull().default(0),
 });
 
 export const Likes = sqliteTable(

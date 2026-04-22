@@ -1,8 +1,8 @@
 import { getActionContext } from "astro:actions";
 import { CACHE_VERSION } from "astro:env/server";
-import { defineMiddleware } from "astro:middleware";
+import { defineMiddleware, sequence } from "astro:middleware";
 import type { APIContext } from "astro";
-import { db, kv } from "@/db";
+import { database, kv } from "@/db";
 import { session } from "./userStore";
 
 const unprotectedPaths = new Set(["/login", "/register"]);
@@ -60,7 +60,13 @@ function redirect(context: APIContext, isHtml: boolean) {
   return context.redirect("/login");
 }
 
-export const onRequest = defineMiddleware(async (context, next) => {
+const loginMiddleware = defineMiddleware(async (context, next) => {
+  const { session: d1Session, db } = database.withSession(
+    context.cookies.get("d1-session")?.value,
+  );
+  context.locals.db = db;
+  context.locals.d1Session = d1Session;
+
   if (context.isPrerendered || unprotectedPaths.has(context.url.pathname))
     return next();
 
@@ -137,12 +143,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   const locale = context.preferredLocale || context.currentLocale || "pt-BR";
 
+  context.locals.userId = userId;
   context.locals.user = {
-    id: userId,
-    info: {
-      locale,
-      ...user,
-    },
+    locale,
+    ...user,
   };
 
   if (isHtml.get) {
@@ -166,5 +170,36 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return next();
   }
 
-  return session.run(context.locals.user.info, next);
+  return session.run({ user: context.locals.user }, next);
 });
+
+const d1SessionMiddleware = defineMiddleware(async (context, next) => {
+  return next()
+    .then((response) => {
+      const d1Session = context.locals.d1Session;
+      const bookmark = d1Session?.getBookmark();
+      const oldBookmark = context.cookies.get("d1-session")?.value;
+
+      if (bookmark && bookmark !== oldBookmark) {
+        if (import.meta.env.DEV) {
+          console.log(`Setting D1 session cookie with bookmark: ${bookmark}`);
+        }
+
+        context.cookies.set("d1-session", bookmark, {
+          httpOnly: true,
+          secure: true,
+          sameSite: "lax",
+          path: "/",
+          maxAge: 24 * 60 * 60, // 1 day
+        });
+      }
+
+      return response;
+    })
+    .catch((error) => {
+      console.error("Error in afterRequest middleware:", error);
+      throw error;
+    });
+});
+
+export const onRequest = sequence(loginMiddleware, d1SessionMiddleware);

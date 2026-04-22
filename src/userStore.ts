@@ -1,8 +1,11 @@
 import type { AsyncLocalStorage } from "node:async_hooks";
+import type { QueryClient } from "@tanstack/react-query";
 
-type User = App.Locals["user"]["info"];
+type User = App.Locals["user"];
 
-type ALS = AsyncLocalStorage<App.Locals["user"]["info"] | undefined>;
+type ALS = AsyncLocalStorage<
+  { user: User; queryClient?: QueryClient } | undefined
+>;
 
 async function getSessionStore(): Promise<ALS | undefined> {
   if (!import.meta.env.SSR) return undefined;
@@ -14,12 +17,12 @@ async function getSessionStore(): Promise<ALS | undefined> {
 
     if (!(ALS_KEY in globalThis)) {
       (globalThis as unknown as Record<symbol, ALS>)[ALS_KEY] =
-        new AsyncLocalStorage<App.Locals["user"]["info"] | undefined>();
+        new AsyncLocalStorage<{ user: User; queryClient: QueryClient } | undefined>();
     }
     return (globalThis as unknown as Record<symbol, ALS>)[ALS_KEY];
   }
 
-  return new AsyncLocalStorage<App.Locals["user"]["info"] | undefined>();
+  return new AsyncLocalStorage<{ user: User; queryClient: QueryClient } | undefined>();
 }
 
 export const session = import.meta.env.SSR
@@ -28,7 +31,7 @@ export const session = import.meta.env.SSR
 
 export function getUser(): User | undefined {
   if (import.meta.env.SSR) {
-    return session?.getStore() ?? undefined;
+    return session?.getStore()?.user ?? undefined;
   }
 
   let user = (window as unknown as Record<string, unknown>).__USER__;

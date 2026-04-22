@@ -29,8 +29,8 @@ export function D1DevSeeder(): Plugin {
         relations,
       });
 
-      console.log("Running migrations...");
       const folder = new URL("../drizzle", import.meta.url).pathname;
+      console.log("Running migrations...");
       await migrate(db, { migrationsFolder: folder });
 
       console.log("Seeding database...");

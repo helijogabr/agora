@@ -32,8 +32,8 @@ export default function Feed({
             pages: data.pages.map((page) => ({
               posts: page.posts.map((post) => ({
                 ...post,
-                createdAt: new Date(post.createdAt).toLocaleString(locale),
-                updatedAt: new Date(post.updatedAt).toLocaleString(locale),
+                createdAt: post.createdAt.toLocaleString(locale),
+                updatedAt: post.updatedAt.toLocaleString(locale),
               })),
               nextCursor: page.nextCursor,
             })),
@@ -47,7 +47,7 @@ export default function Feed({
         staleTime: 1000 * 60,
         getNextPageParam: (lastPage, _) => lastPage.nextCursor,
       },
-      queryClient,
+      queryClient.get,
     );
 
   const [animate] = useAutoAnimate();

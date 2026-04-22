@@ -1,0 +1,1 @@
+ALTER TABLE `posts` ADD `likesCount` integer DEFAULT 0 NOT NULL;

@@ -1,7 +1,7 @@
 import { ActionError, defineAction } from "astro:actions";
 import { z } from "astro/zod";
-import { and, eq, exists } from "drizzle-orm";
-import { db, Likes, Post } from "../db";
+import { and, eq, exists, notExists, sql } from "drizzle-orm";
+import { Likes, Post } from "../db";
 
 async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -23,7 +23,7 @@ export const getPosts = defineAction({
       await sleep(1000);
     }
 
-    const user = locals.user;
+    const { db, userId } = locals;
 
     const posts = await db.query.Post.findMany({
       columns: {
@@ -32,6 +32,7 @@ export const getPosts = defineAction({
         content: true,
         createdAt: true,
         updatedAt: true,
+        likesCount: true,
       },
       with: {
         author: {
@@ -41,13 +42,12 @@ export const getPosts = defineAction({
         },
       },
       extras: {
-        likes: (t) => db.$count(Likes, eq(Likes.postId, t.id)),
         liked: (t, { sql }) =>
           exists(
             db
               .select({ n: sql`1` })
               .from(Likes)
-              .where(and(eq(Likes.userId, user.id), eq(Likes.postId, t.id))),
+              .where(and(eq(Likes.userId, userId), eq(Likes.postId, t.id))),
           ).mapWith(Boolean),
       },
       limit,
@@ -58,7 +58,7 @@ export const getPosts = defineAction({
       },
       orderBy: {
         updatedAt: "desc",
-      }
+      },
     });
 
     const extra = posts.length > limit ? posts.pop() : undefined;
@@ -83,7 +83,7 @@ export const createPost = defineAction({
       await sleep(1000);
     }
 
-    const { id: userId } = locals.user;
+    const { db, userId } = locals;
 
     const now = new Date();
 
@@ -118,12 +118,12 @@ export const deletePost = defineAction({
       await sleep(500);
     }
 
-    const user = locals.user;
+    const { db, userId, user } = locals;
 
     const where =
-      user.info.role === "admin"
+      user.role === "admin"
         ? eq(Post.id, postId)
-        : and(eq(Post.id, postId), eq(Post.authorId, user.id));
+        : and(eq(Post.id, postId), eq(Post.authorId, userId));
 
     const res = await db
       .delete(Post)
@@ -153,38 +153,53 @@ export const likePost = defineAction({
       await sleep(500);
     }
 
-    const { id: userId } = locals.user;
+    const { db, userId } = locals;
 
-    let isLiked: boolean;
+    const hasLike = db
+      .select({
+        n: sql`1`,
+      })
+      .from(Likes)
+      .where(and(eq(Likes.userId, userId), eq(Likes.postId, postId)));
 
-    if (liked) {
-      const res = await db
-        .insert(Likes)
-        .values({
-          userId,
-          postId,
+    const [_, _1, result] = await db.batch([
+      db
+        .update(Post)
+        .set({
+          likesCount: sql`(likesCount + ${liked ? 1 : -1})`,
         })
-        .onConflictDoNothing()
-        .then((res) => res.meta.rows_written);
+        .where(
+          and(
+            eq(Post.id, postId),
+            liked ? notExists(hasLike) : exists(hasLike),
+          ),
+        ),
+      liked
+        ? db.insert(Likes).values({ userId, postId }).onConflictDoNothing()
+        : db
+            .delete(Likes)
+            .where(and(eq(Likes.userId, userId), eq(Likes.postId, postId))),
+      db
+        .select({
+          likesCount: Post.likesCount,
+        })
+        .from(Post)
+        .where(eq(Post.id, postId)),
+    ]);
 
-      // if changed, post is liked.
-      isLiked = res > 0;
-    } else {
-      await db
-        .delete(Likes)
-        .where(and(eq(Likes.userId, userId), eq(Likes.postId, postId)))
-        .then((res) => res.meta.rows_written);
-
-      // delete fails silently, its never liked
-      isLiked = false;
+    if (!result?.length) {
+      throw new ActionError({
+        code: "NOT_FOUND",
+        message: "Post not found.",
+      });
     }
 
-    const res = await db.$count(Likes, eq(Likes.postId, postId));
+    const likes = result[0]?.likesCount ?? 0;
 
     return {
       success: true,
-      isLiked,
-      likes: res ?? 0,
+      isLiked: liked,
+      likes,
     };
   },
 });

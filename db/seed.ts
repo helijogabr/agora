@@ -1,9 +1,10 @@
 import { hash } from "bcrypt-ts";
+import { sql } from "drizzle-orm";
 import type { DrizzleD1Database } from "drizzle-orm/d1";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { seed } from "drizzle-seed";
 import * as schema from "./schema";
-import { Post, User } from "./schema";
+import { Likes, Post, User } from "./schema";
 
 function getDateHoursAgo(hours: number) {
   const date = new Date();
@@ -73,4 +74,12 @@ export async function seeder(
       updatedAt: getDateHoursAgo(3),
     },
   ]);
-};
+
+  await db.update(Post).set({
+    likesCount: sql`(
+    SELECT count(*)
+    FROM ${Likes}
+    WHERE ${Likes.postId} = ${Post.id}
+  )`,
+  });
+}

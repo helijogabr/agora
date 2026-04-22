@@ -3,7 +3,7 @@ import LogoutButton from "./LogoutButton.astro";
 import ThemeToggle from "./ThemeToggle.astro";
 
 const current = Astro.url.pathname;
-const user = Astro.locals.user?.info;
+const user = Astro.locals.user;
 
 // prettier-ignore
 const urls = user

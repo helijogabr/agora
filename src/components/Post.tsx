@@ -28,7 +28,7 @@ function PostContent({
 
 export default function Post({
   ghost,
-  likes,
+  likesCount,
   liked,
   author,
   id,
@@ -48,7 +48,7 @@ export default function Post({
         content={content}
         title={title}
       />
-      <PostBar likes={likes} liked={liked} author={author} id={id} />
+      <PostBar likesCount={likesCount} liked={liked} author={author} id={id} />
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { ActionError, defineAction } from "astro:actions";
 import { z } from "astro/zod";
 import { compare, hash } from "bcrypt-ts";
 import { sql } from "drizzle-orm";
-import { db, User } from "../db";
+import { User } from "../db";
 
 export const createUserForm = defineAction({
   accept: "form",
@@ -12,8 +12,9 @@ export const createUserForm = defineAction({
     city: z.string().trim().nonempty(),
     redirect: z.string().optional(),
   }),
-  handler: async (input, { session, cookies, url }) => {
+  handler: async (input, { session, cookies, url, locals }) => {
     const { username, city, password } = input;
+    const { db } = locals;
 
     const existingUser = await db.query.User.findFirst({
       columns: {},
@@ -71,8 +72,9 @@ export const loginForm = defineAction({
     password: z.string().trim().nonempty(),
     redirect: z.string().optional(),
   }),
-  handler: async (input, { session, cookies, url }) => {
+  handler: async (input, { session, cookies, url, locals }) => {
     const { username, password } = input;
+    const { db } = locals;
 
     cookies.delete("hasCache", { path: "/" });
     session?.destroy();
@@ -120,7 +122,7 @@ export const loginForm = defineAction({
 
 export const whoAmI = defineAction({
   handler: async (_input, { locals }) => {
-    return locals.user.info;
+    return locals.user;
   },
 });
 

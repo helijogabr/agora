@@ -1,10 +1,11 @@
 ---
 const { invalidateCache, user } = Astro.locals;
+Astro.locals.d1Session = null;
 ---
 
 {
-  invalidateCache && user?.info && (
-    <script is:inline define:vars={{ user: user.info, hash: invalidateCache }}>
+  invalidateCache && user && (
+    <script is:inline define:vars={{ user, hash: invalidateCache }}>
       window.__USER__ = user;
 
       requestIdleCallback(() => {

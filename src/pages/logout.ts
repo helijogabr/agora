@@ -1,8 +1,10 @@
 import type { APIRoute } from "astro";
 
-export const POST: APIRoute = (context) => {
-  context.session?.destroy();
-  context.cookies.delete("hasCache", { path: "/" });
+export const POST: APIRoute = ({ cookies, redirect, session }) => {
+  session?.destroy();
+  cookies.delete("hasCache", { path: "/" });
+  cookies.delete("d1-session", { path: "/" });
 
-  return context.redirect("/login");
+  const res = redirect("/login");
+  return res;
 }

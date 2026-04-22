@@ -12,16 +12,16 @@ export default function NewPost() {
     {
       mutationFn: actions.createPost.orThrow,
       onMutate: async (newPost) => {
-        await queryClient.cancelQueries({ queryKey: ["posts"] });
+        await queryClient.get.cancelQueries({ queryKey: ["posts"] });
 
-        const previousPosts = queryClient.getQueryData(["posts"]);
+        const previousPosts = queryClient.get.getQueryData(["posts"]);
         const now = new Date();
 
         const post: PostData = {
           author: { name: user?.name ?? "Unknown" },
           content: newPost.content,
           id: now.getTime(),
-          likes: 0,
+          likesCount: 0,
           liked: false,
           title: newPost.title,
           createdAt: now,
@@ -30,7 +30,7 @@ export default function NewPost() {
         };
 
         // optimistically add the post to the first page
-        queryClient.setQueryData(
+        queryClient.get.setQueryData(
           ["posts"],
           (
             old: InfiniteData<{ posts: PostData[]; nextCursor?: Date | null }>,
@@ -69,17 +69,17 @@ export default function NewPost() {
       },
       onError: (_, _1, onMutateResult) => {
         if (onMutateResult?.previousPosts) {
-          queryClient.setQueryData(
+          queryClient.get.setQueryData(
             ["posts"],
             () => onMutateResult?.previousPosts,
           );
         }
       },
       onSettled: () => {
-        queryClient.invalidateQueries({ queryKey: ["posts"] });
+        queryClient.get.invalidateQueries({ queryKey: ["posts"] });
       },
     },
-    queryClient,
+    queryClient.get,
   );
 
   const [title, setTitle] = useState("");
