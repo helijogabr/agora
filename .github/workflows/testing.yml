@@ -51,7 +51,21 @@ jobs:
 
       - name: Astro DB check
         if: env.HAS_DB_SECRETS == 'true'
-        run: pnpm astro db verify
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if pnpm astro db verify; then
+              exit 0
+            fi
+
+            if [ "$attempt" = "3" ]; then
+              echo "Astro DB verify falhou após 3 tentativas."
+              exit 1
+            fi
+
+            echo "Astro DB verify falhou. Nova tentativa em $((attempt * 10)) segundos."
+            sleep $((attempt * 10))
+          done
         env:
           ASTRO_DB_APP_TOKEN: ${{ secrets.ASTRO_DB_APP_TOKEN_READONLY }}
           ASTRO_DB_REMOTE_URL: ${{ secrets.ASTRO_DB_REMOTE_URL }}
@@ -61,7 +75,21 @@ jobs:
 
       - name: Compiling test
         if: env.HAS_DB_SECRETS == 'true'
-        run: pnpm astro build --remote
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if pnpm astro build --remote; then
+              exit 0
+            fi
+
+            if [ "$attempt" = "3" ]; then
+              echo "Astro build remoto falhou após 3 tentativas."
+              exit 1
+            fi
+
+            echo "Astro build remoto falhou. Nova tentativa em $((attempt * 10)) segundos."
+            sleep $((attempt * 10))
+          done
         env:
           ASTRO_DB_APP_TOKEN: ${{ secrets.ASTRO_DB_APP_TOKEN_READONLY }}
           ASTRO_DB_REMOTE_URL: ${{ secrets.ASTRO_DB_REMOTE_URL }}
