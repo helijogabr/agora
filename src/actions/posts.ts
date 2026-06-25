@@ -9,12 +9,23 @@ import {
   Likes,
   lt,
   Post,
+  PostAttachment,
   PostTag,
   PostType,
   Tag,
   User,
 } from "astro:db";
 import { z } from "astro/zod";
+import { validateAttachmentDescriptors } from "@/modules/posts/domain/attachment-policy";
+import {
+  AttachmentValidationError,
+  PostPersistenceError,
+} from "@/modules/posts/domain/post-errors";
+import { createPostUseCase } from "@/modules/posts/infrastructure/create-post.composition";
+import {
+  ObjectStorageConfigurationError,
+  ObjectStorageOperationError,
+} from "@/modules/storage/domain/storage-errors";
 
 async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -81,9 +92,26 @@ export const getPosts = defineAction({
           .where(eq(PostTag.post, post.id))
           .all();
 
+        const images = await db
+          .select({
+            id: PostAttachment.id,
+            originalName: PostAttachment.originalName,
+            contentType: PostAttachment.contentType,
+            sizeBytes: PostAttachment.sizeBytes,
+          })
+          .from(PostAttachment)
+          .where(eq(PostAttachment.post, post.id))
+          .all();
+
         return {
           ...post,
           tags: postTags.map((tag) => tag.name),
+          images: images
+            .filter((image) => image.contentType.startsWith("image/"))
+            .map((image) => ({
+              ...image,
+              src: `/api/post-images/${image.id}`,
+            })),
         };
       }),
     );
@@ -96,6 +124,7 @@ export const getPosts = defineAction({
 });
 
 export const createPost = defineAction({
+  accept: "form",
   input: z
     .object({
       title: z.string().trim().nonempty(),
@@ -108,6 +137,7 @@ export const createPost = defineAction({
       district: z.string().trim().optional(),
       street: z.string().trim().optional(),
       number: z.string().trim().optional(),
+      attachments: z.array(z.instanceof(File)).default([]),
     })
     .superRefine((value, ctx) => {
       if (!value.informAddress) return;
@@ -125,69 +155,48 @@ export const createPost = defineAction({
           ctx.addIssue({
             code: "custom",
             path: [field],
-            message: "Campo obrigatorio quando endereco for informado.",
+            message: "Campo obrigatório quando endereço for informado.",
           });
         }
       }
     }),
-  handler: async (
-    {
-      title,
-      content,
-      postType,
-      tagIds,
-      informAddress,
-      zipCode,
-      city,
-      district,
-      street,
-      number,
-    },
-    { locals },
-  ) => {
+  handler: async (input, { locals }) => {
+    const user = locals.user;
+
+    if (!user?.id) {
+      throw new ActionError({
+        code: "UNAUTHORIZED",
+        message: "Você precisa estar logado para criar uma publicação.",
+      });
+    }
+
     if (import.meta.env.DEV) {
       await sleep(1000);
     }
 
-    const { id: userId } = locals.user;
+    try {
+      const attachments = await fileListToIncomingAttachments(
+        input.attachments ?? [],
+      );
+      const createPostService = createPostUseCase();
 
-    const res = await db.insert(Post).values({
-      title,
-      content,
-      author: userId,
-      postType,
-      zipCode: informAddress ? zipCode : undefined,
-      city: informAddress ? city : undefined,
-      district: informAddress ? district : undefined,
-      street: informAddress ? street : undefined,
-      number: informAddress ? number : undefined,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    if (!res.lastInsertRowid) {
-      throw new ActionError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Falha ao criar post.",
+      return await createPostService.execute({
+        title: input.title,
+        content: input.content,
+        authorId: user.id,
+        postType: input.postType,
+        tagIds: input.tagIds,
+        informAddress: input.informAddress,
+        zipCode: input.zipCode,
+        city: input.city,
+        district: input.district,
+        street: input.street,
+        number: input.number,
+        attachments,
       });
+    } catch (error) {
+      throw mapCreatePostError(error);
     }
-
-    if (tagIds.length > 0) {
-      await db
-        .insert(PostTag)
-        .values(
-          tagIds.map((tagId) => ({
-            post: Number(res.lastInsertRowid),
-            tag: tagId,
-          })),
-        )
-        .onConflictDoNothing();
-    }
-
-    return {
-      success: true,
-      postId: res.lastInsertRowid,
-    };
   },
 });
 
@@ -209,6 +218,8 @@ export const deletePost = defineAction({
 
     await db.delete(Likes).where(eq(Likes.post, postId));
 
+    await db.delete(PostAttachment).where(eq(PostAttachment.post, postId));
+
     await db.delete(PostTag).where(eq(PostTag.post, postId));
 
     const res = await db
@@ -228,6 +239,69 @@ export const deletePost = defineAction({
     };
   },
 });
+
+async function fileListToIncomingAttachments(files: File[]) {
+  validateAttachmentDescriptors(
+    files.map((file) => ({
+      originalName: file.name,
+      contentType: file.type,
+      size: file.size,
+    })),
+  );
+
+  return Promise.all(
+    files.map(async (file) => ({
+      originalName: file.name,
+      contentType: file.type,
+      size: file.size,
+      bytes: new Uint8Array(await file.arrayBuffer()),
+    })),
+  );
+}
+
+function mapCreatePostError(error: unknown): ActionError {
+  if (error instanceof ActionError) {
+    return error;
+  }
+
+  if (error instanceof AttachmentValidationError) {
+    return new ActionError({
+      code: "BAD_REQUEST",
+      message: error.issues.join(" "),
+    });
+  }
+
+  if (error instanceof ObjectStorageConfigurationError) {
+    return new ActionError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Armazenamento de anexos não configurado.",
+    });
+  }
+
+  if (error instanceof ObjectStorageOperationError) {
+    return new ActionError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Falha ao armazenar anexos. Tente novamente.",
+    });
+  }
+
+  if (error instanceof PostPersistenceError) {
+    return new ActionError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Falha ao criar post.",
+    });
+  }
+
+  console.error("Erro inesperado ao criar post.", {
+    operation: "createPost",
+    errorName: error instanceof Error ? error.name : "UnknownError",
+  });
+
+  return new ActionError({
+    code: "INTERNAL_SERVER_ERROR",
+    message: "Falha ao criar post.",
+  });
+}
 
 export const likePost = defineAction({
   input: z.object({

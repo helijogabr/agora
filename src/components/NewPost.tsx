@@ -1,16 +1,35 @@
 import { actions } from "astro:actions";
 import { type InfiniteData, useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Select, {
   type GroupBase,
   type Props as ReactSelectProps,
 } from "react-select";
 import { usePostMetadata } from "@/hooks/usePostMetadata";
+import {
+  POST_ATTACHMENT_ACCEPT,
+  validateAttachmentDescriptors,
+} from "@/modules/posts/domain/attachment-policy";
+import { AttachmentValidationError } from "@/modules/posts/domain/post-errors";
 import { queryClient } from "@/queryClient";
 import { getUser } from "@/userStore";
 import type { PostData } from "./Feed";
 
 type SelectOption = { value: number; label: string };
+
+type NewPostMutationInput = {
+  title: string;
+  content: string;
+  postType: number;
+  tagIds: number[];
+  informAddress: boolean;
+  zipCode?: string | undefined;
+  city?: string | undefined;
+  district?: string | undefined;
+  street?: string | undefined;
+  number?: string | undefined;
+  attachments: File[];
+};
 
 type StyledSelectProps<IsMulti extends boolean> = ReactSelectProps<
   SelectOption,
@@ -90,7 +109,8 @@ export default function NewPost({ onPostCreated }: NewPostProps) {
 
   const { mutate, isPending } = useMutation(
     {
-      mutationFn: actions.createPost.orThrow,
+      mutationFn: (newPost: NewPostMutationInput) =>
+        actions.createPost.orThrow(createPostFormData(newPost)),
       onMutate: async (newPost) => {
         await queryClient.cancelQueries({ queryKey: ["posts"] });
 
@@ -116,6 +136,7 @@ export default function NewPost({ onPostCreated }: NewPostProps) {
           title: newPost.title,
           createdAt: now,
           updatedAt: now,
+          images: [],
           ghost: true,
         };
 
@@ -158,6 +179,11 @@ export default function NewPost({ onPostCreated }: NewPostProps) {
         setContent("");
         setPostType(null);
         setSelectedTags([]);
+        setSelectedFiles([]);
+        setAttachmentErrors([]);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
         setInformAddress(false);
         setZipCode("");
         setCity("");
@@ -193,6 +219,29 @@ export default function NewPost({ onPostCreated }: NewPostProps) {
   const [district, setDistrict] = useState("");
   const [street, setStreet] = useState("");
   const [number, setNumber] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [attachmentErrors, setAttachmentErrors] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function updateSelectedFiles(files: File[]) {
+    try {
+      validateAttachmentDescriptors(files.map(fileToAttachmentDescriptor));
+      setSelectedFiles(files);
+      setAttachmentErrors([]);
+    } catch (error) {
+      if (error instanceof AttachmentValidationError) {
+        setSelectedFiles([]);
+        setAttachmentErrors(error.issues);
+      } else {
+        setSelectedFiles([]);
+        setAttachmentErrors(["Não foi possível validar os anexos."]);
+      }
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }
 
   return (
     <form
@@ -214,7 +263,8 @@ export default function NewPost({ onPostCreated }: NewPostProps) {
           !postType ||
           !title.trim() ||
           !content.trim() ||
-          hasInvalidAddress
+          hasInvalidAddress ||
+          attachmentErrors.length > 0
         )
           return;
         mutate({
@@ -228,6 +278,7 @@ export default function NewPost({ onPostCreated }: NewPostProps) {
           district: district.trim() || undefined,
           street: street.trim() || undefined,
           number: number.trim() || undefined,
+          attachments: selectedFiles,
         });
       }}
     >
@@ -280,6 +331,65 @@ export default function NewPost({ onPostCreated }: NewPostProps) {
         options={tags.map((tag) => ({ value: tag.id, label: tag.name }))}
         truncateMultiValueLabel
       />
+
+      <SectionHeader title="Anexos" />
+
+      <label
+        htmlFor="postAttachments"
+        className="w-full text-sm font-medium text-gray-700 dark:text-gray-200"
+      >
+        Anexos (opcional)
+      </label>
+
+      <input
+        ref={fileInputRef}
+        id="postAttachments"
+        type="file"
+        name="attachments"
+        multiple
+        accept={POST_ATTACHMENT_ACCEPT}
+        disabled={isPending}
+        className="min-h-9.5 w-full rounded border border-gray-300 bg-gray-50 px-2 py-1 text-gray-900 file:mr-3 file:rounded file:border-0 file:bg-gray-200 file:px-2 file:py-1 file:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:file:bg-gray-700 dark:file:text-gray-100"
+        onChange={(event) => {
+          updateSelectedFiles(Array.from(event.currentTarget.files ?? []));
+        }}
+      />
+
+      {attachmentErrors.length > 0 && (
+        <ul className="w-full list-disc pl-5 text-sm text-red-700 dark:text-red-300">
+          {attachmentErrors.map((error) => (
+            <li key={error}>{error}</li>
+          ))}
+        </ul>
+      )}
+
+      {selectedFiles.length > 0 && (
+        <ul className="flex w-full flex-col gap-1 text-sm text-gray-700 dark:text-gray-200">
+          {selectedFiles.map((file, index) => (
+            <li
+              key={`${file.name}-${file.size}-${file.lastModified}`}
+              className="flex min-h-9 items-center justify-between gap-2 rounded border border-gray-300 bg-gray-50 px-2 dark:border-gray-600 dark:bg-gray-800"
+            >
+              <span className="min-w-0 truncate">
+                {file.name} ({formatFileSize(file.size)})
+              </span>
+              <button
+                type="button"
+                disabled={isPending}
+                className="shrink-0 cursor-pointer rounded bg-gray-200 px-2 py-1 text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-700 dark:text-gray-200"
+                onClick={() => {
+                  const nextFiles = selectedFiles.filter(
+                    (_, fileIndex) => fileIndex !== index,
+                  );
+                  updateSelectedFiles(nextFiles);
+                }}
+              >
+                Remover
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <SectionHeader title="Local" />
 
@@ -369,6 +479,7 @@ export default function NewPost({ onPostCreated }: NewPostProps) {
           !postType ||
           !title.trim() ||
           !content.trim() ||
+          attachmentErrors.length > 0 ||
           (informAddress &&
             (!zipCode.trim() ||
               !city.trim() ||
@@ -378,8 +489,57 @@ export default function NewPost({ onPostCreated }: NewPostProps) {
         }
         className={`w-fit cursor-pointer rounded bg-gray-300 px-2 py-1 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-700`}
       >
-        Criar Postagem
+        {isPending ? "Enviando..." : "Criar Postagem"}
       </button>
     </form>
   );
+}
+
+function createPostFormData(input: NewPostMutationInput): FormData {
+  const formData = new FormData();
+
+  formData.set("title", input.title);
+  formData.set("content", input.content);
+  formData.set("postType", String(input.postType));
+  formData.set("informAddress", String(input.informAddress));
+
+  for (const tagId of input.tagIds) {
+    formData.append("tagIds", String(tagId));
+  }
+
+  for (const field of ["zipCode", "city", "district", "street", "number"] as const) {
+    const value = input[field];
+
+    if (value) {
+      formData.set(field, value);
+    }
+  }
+
+  for (const file of input.attachments) {
+    formData.append("attachments", file, file.name);
+  }
+
+  return formData;
+}
+
+function fileToAttachmentDescriptor(file: File) {
+  return {
+    originalName: file.name,
+    contentType: file.type,
+    size: file.size,
+  };
+}
+
+function formatFileSize(size: number): string {
+  if (size < 1024) {
+    return `${size} B`;
+  }
+
+  const kib = size / 1024;
+
+  if (kib < 1024) {
+    return `${kib.toFixed(1)} KiB`;
+  }
+
+  return `${(kib / 1024).toFixed(1)} MiB`;
 }
