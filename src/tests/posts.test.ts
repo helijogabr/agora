@@ -24,6 +24,7 @@ type CreatePostInput = {
   district?: string;
   street?: string;
   number?: string;
+  attachments?: File[];
 };
 type DeletePostInput = { postId: number };
 type LikePostInput = { postId: number; liked: boolean };
@@ -135,6 +136,17 @@ vi.mock("astro:db", () => ({
     street: "Post.street",
     number: "Post.number",
   },
+  PostAttachment: {
+    id: "PostAttachment.id",
+    post: "PostAttachment.post",
+    originalName: "PostAttachment.originalName",
+    contentType: "PostAttachment.contentType",
+    sizeBytes: "PostAttachment.sizeBytes",
+    storageKey: "PostAttachment.storageKey",
+    storageProvider: "PostAttachment.storageProvider",
+    etag: "PostAttachment.etag",
+    createdAt: "PostAttachment.createdAt",
+  },
   PostType: { id: "PostType.id", name: "PostType.name" },
   PostTag: { post: "PostTag.post", tag: "PostTag.tag" },
   Tag: { id: "Tag.id", name: "Tag.name" },
@@ -180,8 +192,8 @@ describe("posts.ts actions", () => {
 
       expect(result.posts).toHaveLength(2);
       expect(result.posts).toEqual([
-        { id: 1, updatedAt: d1, tags: [] },
-        { id: 2, updatedAt: d2, tags: [] },
+        { id: 1, updatedAt: d1, tags: [], images: [] },
+        { id: 2, updatedAt: d2, tags: [], images: [] },
       ]);
       expect(result.nextCursor).toEqual(d2);
     });
@@ -208,6 +220,7 @@ describe("posts.ts actions", () => {
         content: "Awesome",
         postType: 1,
         tagIds: [],
+        attachments: [],
       };
       const result = await createPostAction.handler(input, getBaseContext());
 

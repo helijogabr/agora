@@ -39,6 +39,23 @@ const Post = defineTable({
   },
 });
 
+const PostAttachment = defineTable({
+  columns: {
+    id: column.number({ primaryKey: true }),
+    post: column.number({
+      references: () => Post.columns.id,
+    }),
+    originalName: column.text(),
+    contentType: column.text(),
+    sizeBytes: column.number(),
+    storageKey: column.text({ unique: true }),
+    storageProvider: column.text(),
+    etag: column.text({ optional: true }),
+    createdAt: column.date(),
+  },
+  indexes: [{ on: ["post"] }],
+});
+
 const PostType = defineTable({
   columns: {
     id: column.number({ primaryKey: true }),
@@ -91,5 +108,5 @@ const Likes = defineTable({
 
 // https://astro.build/db/config
 export default defineDb({
-  tables: { User, Post, PostType, PostTag, Tag, Session, Likes },
+  tables: { User, Post, PostAttachment, PostType, PostTag, Tag, Session, Likes },
 });
