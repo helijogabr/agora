@@ -44,28 +44,15 @@ jobs:
         run: pnpm biome lint
 
       - name: Astro check
-        run: pnpm astro check
+        run: pnpm astro check --remote
 
       - name: TypeScript type checking
         run: pnpm tsc --noEmit
 
+
       - name: Astro DB check
         if: env.HAS_DB_SECRETS == 'true'
-        shell: bash
-        run: |
-          for attempt in 1 2 3; do
-            if pnpm astro db verify; then
-              exit 0
-            fi
-
-            if [ "$attempt" = "3" ]; then
-              echo "Astro DB verify falhou após 3 tentativas."
-              exit 1
-            fi
-
-            echo "Astro DB verify falhou. Nova tentativa em $((attempt * 10)) segundos."
-            sleep $((attempt * 10))
-          done
+        run: pnpm astro db verify --remote
         env:
           ASTRO_DB_APP_TOKEN: ${{ secrets.ASTRO_DB_APP_TOKEN_READONLY }}
           ASTRO_DB_REMOTE_URL: ${{ secrets.ASTRO_DB_REMOTE_URL }}
