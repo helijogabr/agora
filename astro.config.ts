@@ -3,7 +3,7 @@ import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import vercel from "@astrojs/vercel";
 import tailwindcss from "@tailwindcss/vite";
-import { defineConfig } from "astro/config";
+import { defineConfig, envField } from "astro/config";
 import icon from "astro-icon";
 import { dbDriver } from "./db/driver/config";
 
@@ -28,12 +28,43 @@ export default defineConfig({
   },
   env: {
     schema: {
-      CACHE_VERSION: {
+      CACHE_VERSION: envField.number({
         context: "server",
         access: "public",
-        type: "number",
         default: 1,
-      },
+      }),
+      OBJECT_STORAGE_DRIVER: envField.enum({
+        context: "server",
+        access: "secret",
+        values: ["cloudflare-r2"],
+        optional: true,
+      }),
+      CLOUDFLARE_R2_ENDPOINT: envField.string({
+        context: "server",
+        access: "secret",
+        optional: true,
+        url: true,
+      }),
+      CLOUDFLARE_R2_ACCOUNT_ID: envField.string({
+        context: "server",
+        access: "secret",
+        optional: true,
+      }),
+      CLOUDFLARE_R2_ACCESS_KEY_ID: envField.string({
+        context: "server",
+        access: "secret",
+        optional: true,
+      }),
+      CLOUDFLARE_R2_SECRET_ACCESS_KEY: envField.string({
+        context: "server",
+        access: "secret",
+        optional: true,
+      }),
+      CLOUDFLARE_R2_BUCKET_NAME: envField.string({
+        context: "server",
+        access: "secret",
+        optional: true,
+      }),
     },
   },
   vite: {
@@ -44,6 +75,9 @@ export default defineConfig({
   adapter: vercel(),
   session: {
     driver: dbDriver(),
+  },
+  security: {
+    actionBodySizeLimit: 4_500_000,
   },
   prefetch: {
     defaultStrategy: "hover",
