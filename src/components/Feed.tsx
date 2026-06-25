@@ -54,7 +54,7 @@ export default function Feed({
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <div className="flex flex-col gap-2">
+      <div className="flex w-full max-w-2xl flex-col gap-2">
         <ul ref={animate} className="flex flex-col gap-2">
           {data?.pages
             .flatMap((page) => page.posts)
