@@ -16,9 +16,11 @@ concurrency:
 jobs:
   ci-pipeline:
     env:
-      HAS_DB_SECRETS: ${{ secrets.ASTRO_DB_APP_TOKEN_READONLY != '' }}
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+      REDIS_URL: ${{ secrets.REDIS_URL_READONLY }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_TOKEN: ${{ secrets.DATABASE_TOKEN_READONLY }}
 
     runs-on: ubuntu-latest
     steps:
@@ -52,23 +54,21 @@ jobs:
         if: env.HAS_DB_SECRETS == 'true'
         run: pnpm run db:check
 
+      - name: Debug Environment Variable Presence
+        run: |
+          if [ -z "${{ env.DATABASE_URL }}" ]; then
+            echo "❌ DATABASE_URL is empty at the workflow layer!"
+          else
+            echo "✅ DATABASE_URL is safely populated in the runner."
+          fi
+
       - name: TypeScript type checking
         run: pnpm run typecheck
 
       - name: Run unit tests
-        if: env.HAS_DB_SECRETS == 'true'
-        shell: bash
+        if: env.DATABASE_URL != ''
         run: pnpm run test
-        env:
-          REDIS_URL: ${{ secrets.REDIS_URL_READONLY }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DATABASE_TOKEN: ${{ secrets.DATABASE_TOKEN_READONLY }}
 
       - name: Compiling test
-        if: env.HAS_DB_SECRETS == 'true'
-        shell: bash
+        if: env.DATABASE_URL != ''
         run: pnpm run build
-        env:
-          REDIS_URL: ${{ secrets.REDIS_URL_READONLY }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DATABASE_TOKEN: ${{ secrets.DATABASE_TOKEN_READONLY }}

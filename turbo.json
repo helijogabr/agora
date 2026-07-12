@@ -1,6 +1,7 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
+  "globalEnv": ["DATABASE_URL", "DATABASE_TOKEN", "REDIS_URL"],
   "tasks": {
     "_build": {
       "outputs": ["dist/**", "build/**", ".astro/**", ".vercel/output/**"]
