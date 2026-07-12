@@ -240,6 +240,15 @@ export default function FeedFilters({
               )}
             </section>
           </div>
+
+          <div className="mt-4 flex justify-end">
+            <button
+              type="button"
+              className="rounded bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700"
+            >
+              Aplicar filtros
+            </button>
+          </div>
         </div>
       )}
     </div>
