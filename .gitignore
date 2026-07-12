@@ -19,6 +19,8 @@ pnpm-debug.log*
 .env.production
 cloudflare_bucket.txt
 
+.turbo
+
 # macOS-specific files
 .DS_Store
 

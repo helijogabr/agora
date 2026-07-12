@@ -1,4 +1,3 @@
-import db from "@astrojs/db";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import vercel from "@astrojs/vercel";
@@ -6,6 +5,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, envField } from "astro/config";
 import icon from "astro-icon";
 import { dbDriver } from "./db/driver/config";
+import devSeeder from "./db/plugin_seeder";
 
 // https://astro.build/config
 export default defineConfig({
@@ -15,7 +15,6 @@ export default defineConfig({
         plugins: ["babel-plugin-react-compiler"],
       },
     }),
-    db(),
     sitemap(),
     icon(),
   ],
@@ -32,6 +31,20 @@ export default defineConfig({
         context: "server",
         access: "public",
         default: 1,
+      }),
+      DATABASE_URL: envField.string({
+        context: "server",
+        access: "secret",
+        url: true,
+      }),
+      DATABASE_TOKEN: envField.string({
+        context: "server",
+        access: "secret",
+      }),
+      REDIS_URL: envField.string({
+        context: "server",
+        access: "secret",
+        url: true,
       }),
       OBJECT_STORAGE_DRIVER: envField.enum({
         context: "server",
@@ -68,13 +81,14 @@ export default defineConfig({
     },
   },
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [tailwindcss(), devSeeder()],
   },
   site: "https://todo-astro.vercel.app",
   output: "server",
   adapter: vercel(),
   session: {
     driver: dbDriver(),
+    ttl: 1000 * 60 * 60 * 24
   },
   security: {
     actionBodySizeLimit: 4_500_000,

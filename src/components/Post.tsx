@@ -1,6 +1,6 @@
+import { useState } from "react";
 import type { PostData } from "./Feed";
 import PostBar from "./PostBar";
-import { useState } from "react";
 
 interface Props extends Omit<PostData, "createdAt" | "updatedAt"> {
   createdAt: string;
@@ -78,7 +78,9 @@ function PostContent({
 type PostImage = Props["images"][number];
 
 function PostImagesCarousel({ images }: { images: PostImage[] }) {
-  const [loadedImages, setLoadedImages] = useState<Set<number>>(() => new Set());
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(
+    () => new Set(),
+  );
 
   if (images.length === 0) return null;
 
@@ -92,14 +94,14 @@ function PostImagesCarousel({ images }: { images: PostImage[] }) {
           const isLoaded = loadedImages.has(image.id);
 
           return (
-            <li key={image.id} className="min-w-[14rem] max-w-[18rem]">
-              <figure className="relative aspect-[4/3] snap-start overflow-hidden rounded border border-gray-400 bg-gray-200 dark:border-gray-600 dark:bg-gray-700">
+            <li key={image.id} className="max-w-[18rem] min-w-56">
+              <figure className="relative aspect-4/3 snap-start overflow-hidden rounded border border-gray-400 bg-gray-200 dark:border-gray-600 dark:bg-gray-700">
                 {!isLoaded && (
                   <div className="absolute inset-0 animate-pulse bg-gray-200 dark:bg-gray-700" />
                 )}
                 <img
                   src={image.src}
-                  alt={image.originalName}
+                  alt={image.originalName ?? "Image"}
                   loading="lazy"
                   className={`h-full w-full object-cover transition-opacity duration-200 ${
                     isLoaded ? "opacity-100" : "opacity-0"

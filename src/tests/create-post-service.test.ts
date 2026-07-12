@@ -1,10 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
-import { AttachmentValidationError, PostPersistenceError } from "@/modules/posts/domain/post-errors";
-import { CreatePostService, type IncomingAttachment } from "@/modules/posts/application/services/create-post.service";
 import type {
   CreatePostRepositoryInput,
   PostRepositoryPort,
 } from "@/modules/posts/application/ports/post-repository.port";
+import {
+  CreatePostService,
+  type IncomingAttachment,
+} from "@/modules/posts/application/services/create-post.service";
+import {
+  AttachmentValidationError,
+  PostPersistenceError,
+} from "@/modules/posts/domain/post-errors";
 import type {
   ObjectStoragePort,
   StoreObjectInput,
@@ -160,7 +166,9 @@ describe("CreatePostService", () => {
       "post-attachments/batch-id/object-id-1.png",
       "post-attachments/batch-id/object-id-2.webp",
     ]);
-    expect(new Set(storage.storedInputs.map((input) => input.key)).size).toBe(2);
+    expect(new Set(storage.storedInputs.map((input) => input.key)).size).toBe(
+      2,
+    );
     expect(repository.input?.attachments).toHaveLength(2);
   });
 
@@ -189,15 +197,15 @@ describe("CreatePostService", () => {
   it("não usa o nome original para montar caminho nem permite path traversal", async () => {
     const { service, repository, storage } = createService();
 
-    await service.execute(baseCommand([attachment({ originalName: "../../a.png" })]));
+    await service.execute(
+      baseCommand([attachment({ originalName: "../../a.png" })]),
+    );
 
     expect(storage.storedInputs[0]?.key).toBe(
       "post-attachments/batch-id/object-id-1.png",
     );
     expect(storage.storedInputs[0]?.key).not.toContain("..");
-    expect(repository.input?.attachments[0]?.originalName).toBe(
-      ".._.._a.png",
-    );
+    expect(repository.input?.attachments[0]?.originalName).toBe(".._.._a.png");
   });
 
   it("rejeita arquivo vazio antes de upload", async () => {
@@ -205,9 +213,7 @@ describe("CreatePostService", () => {
 
     await expect(
       service.execute(
-        baseCommand([
-          attachment({ bytes: new Uint8Array(), size: 0 }),
-        ]),
+        baseCommand([attachment({ bytes: new Uint8Array(), size: 0 })]),
       ),
     ).rejects.toBeInstanceOf(AttachmentValidationError);
 
@@ -219,9 +225,7 @@ describe("CreatePostService", () => {
     const { service, storage, repository } = createService();
 
     await expect(
-      service.execute(
-        baseCommand([attachment({ contentType: "text/html" })]),
-      ),
+      service.execute(baseCommand([attachment({ contentType: "text/html" })])),
     ).rejects.toBeInstanceOf(AttachmentValidationError);
 
     expect(storage.storeCalls).toBe(0);
@@ -245,9 +249,13 @@ describe("CreatePostService", () => {
 
     await expect(
       service.execute(
-        baseCommand(Array.from({ length: 6 }, (_, index) => attachment({
-          originalName: `arquivo-${index}.png`,
-        }))),
+        baseCommand(
+          Array.from({ length: 6 }, (_, index) =>
+            attachment({
+              originalName: `arquivo-${index}.png`,
+            }),
+          ),
+        ),
       ),
     ).rejects.toBeInstanceOf(AttachmentValidationError);
 
@@ -283,9 +291,9 @@ describe("CreatePostService", () => {
     storage.failStoreAtCall = 1;
     const { service, repository } = createService({ storage });
 
-    await expect(service.execute(baseCommand([attachment()]))).rejects.toBeInstanceOf(
-      ObjectStorageOperationError,
-    );
+    await expect(
+      service.execute(baseCommand([attachment()])),
+    ).rejects.toBeInstanceOf(ObjectStorageOperationError);
 
     expect(repository.input).toBeUndefined();
   });

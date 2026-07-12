@@ -16,7 +16,13 @@ concurrency:
 jobs:
   ci-pipeline:
     env:
-      HAS_DB_SECRETS: ${{ secrets.ASTRO_DB_APP_TOKEN_READONLY != '' }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DATABASE_TOKEN: ${{ secrets.DATABASE_TOKEN_READONLY }}
+      REDIS_URL: ${{ secrets.REDIS_URL_READONLY }}
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+      DO_NOT_TRACK: 1
+      TURBO_TELEMETRY_DISABLED: 1
 
     runs-on: ubuntu-latest
     steps:
@@ -38,24 +44,25 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Astro Sync
-        run: pnpm astro sync
+        run: pnpm run sync
 
       - name: Biome linting
-        run: pnpm biome lint
+        run: pnpm run lint
 
       - name: Astro check
-        run: pnpm astro check --remote
+        run: pnpm run check
+
+      - name: DB check
+        if: env.DATABASE_URL != ''
+        run: pnpm run db:check
 
       - name: TypeScript type checking
-        run: pnpm tsc --noEmit
+        run: pnpm run typecheck
 
       - name: Run unit tests
-        run: pnpm vitest run --passWithNoTests
+        if: env.DATABASE_URL != ''
+        run: pnpm run test
 
       - name: Compiling test
-        if: env.HAS_DB_SECRETS == 'true'
-        shell: bash
-        run: pnpm astro build --remote
-        env:
-          ASTRO_DB_APP_TOKEN: ${{ secrets.ASTRO_DB_APP_TOKEN_READONLY }}
-          ASTRO_DB_REMOTE_URL: ${{ secrets.ASTRO_DB_REMOTE_URL }}
+        if: env.DATABASE_URL != ''
+        run: pnpm run build

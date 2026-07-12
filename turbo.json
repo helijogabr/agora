@@ -1,0 +1,50 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "ui": "tui",
+  "globalEnv": ["DATABASE_URL", "DATABASE_TOKEN", "REDIS_URL"],
+  "tasks": {
+    "_build": {
+      "outputs": ["dist/**", "build/**", ".astro/**", ".vercel/output/**"]
+    },
+    "_dev": {
+      "dependsOn": ["push:dev"],
+      "cache": false,
+      "persistent": true
+    },
+    "_test": {
+      "dependsOn": ["push:dev"],
+      "inputs": ["src/**/*", "vitest.config.*"]
+    },
+    "_check": {
+      "inputs": ["src/**/*"]
+    },
+    "_typecheck": {
+      "inputs": ["src/**/*"]
+    },
+    "_db:check": {
+      "inputs": ["db/schema.ts", "drizzle.config.ts"]
+    },
+    "_sync": {
+      "inputs": ["src/**/*", "astro.config.*", "package.json"]
+    },
+    "studio:dev": {
+      "dependsOn": ["push:dev"],
+      "inputs": ["db/schema.ts", "drizzle.config.dev.ts"],
+      "cache": false,
+      "persistent": true
+    },
+    "studio:prod": {
+      "inputs": ["db/schema.ts", "drizzle.config.ts"],
+      "cache": false,
+      "persistent": true
+    },
+    "push:dev": {
+      "inputs": ["db/schema.ts", "drizzle.config.dev.ts"],
+      "cache": false
+    },
+    "push:prod": {
+      "inputs": ["db/schema.ts", "drizzle.config.ts"],
+      "cache": false
+    }
+  }
+}

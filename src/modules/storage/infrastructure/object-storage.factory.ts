@@ -9,9 +9,9 @@ import {
 import type { ObjectStoragePort } from "../application/ports/object-storage.port";
 import { createCloudflareR2Storage } from "./cloudflare-r2/create-cloudflare-r2-storage";
 import {
+  type EnvSource,
   OBJECT_STORAGE_DRIVER_CLOUDFLARE_R2,
   resolveObjectStorageConfig,
-  type EnvSource,
 } from "./object-storage.config";
 
 export function createObjectStorageFromEnv(

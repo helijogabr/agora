@@ -5,7 +5,7 @@ declare namespace App {
     user: {
       name: string;
       city: string;
-      role?: "admin" | undefined;
+      role?: "admin" | "user" | undefined;
     };
   }
 
@@ -15,7 +15,7 @@ declare namespace App {
       info: {
         name: string;
         city: string;
-        role?: "admin" | undefined;
+        role?: "admin" | "user" | undefined;
         locale?: string | undefined;
       };
     };
@@ -28,7 +28,7 @@ declare global {
     __USER__?: {
       name: string;
       city: string;
-      role?: "admin" | undefined;
+      role?: "admin" | "user" | undefined;
     };
   }
 }
