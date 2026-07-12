@@ -3,7 +3,7 @@
   "ui": "tui",
   "tasks": {
     "_build": {
-      "outputs": ["dist/**", "build/**", ".astro/**"]
+      "outputs": ["dist/**", "build/**", ".astro/**", ".vercel/output/**"]
     },
     "_dev": {
       "dependsOn": ["push:dev"],

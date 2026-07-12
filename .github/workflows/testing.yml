@@ -56,13 +56,19 @@ jobs:
         run: pnpm run typecheck
 
       - name: Run unit tests
+        if: env.HAS_DB_SECRETS == 'true'
+        shell: bash
         run: pnpm run test
+        env:
+          REDIS_URL: ${{ secrets.REDIS_URL_READONLY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_TOKEN: ${{ secrets.DATABASE_TOKEN_READONLY }}
 
       - name: Compiling test
         if: env.HAS_DB_SECRETS == 'true'
         shell: bash
         run: pnpm run build
         env:
-          REDIS_URL: ${{ secrets.REDIS_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL_READONLY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DATABASE_TOKEN: ${{ secrets.DATABASE_TOKEN_READONLY }}
