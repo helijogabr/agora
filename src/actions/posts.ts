@@ -77,7 +77,7 @@ export const getPosts = defineAction({
       },
       extras: (table, { sql }) => ({
         likes:
-          sql`(SELECT COUNT(*) FROM ${Likes} WHERE ${Likes.postId} = ${table.id})`.as(
+          sql<number>`(SELECT COUNT(*) FROM ${Likes} WHERE ${Likes.postId} = ${table.id})`.as(
             "likes",
           ),
         liked: exists(
@@ -98,18 +98,18 @@ export const getPosts = defineAction({
     const last = posts.at(-1);
     const nextCursor = extra && last?.updatedAt;
 
-    const formattedPosts = posts.map((post) => ({
-      ...post,
-      author: post.author.name,
-      category: post.type?.name,
-      tags: post.tags.map((tag) => tag.tag.name),
-      images: post.attachments.map((img) => ({
-        ...img,
-        src: `/api/post-images/${img.id}`,
-      })),
-      postTags: undefined,
-      attachments: undefined,
-    }));
+    const formattedPosts = posts.map(
+      ({ attachments, type, ...post }) => ({
+        ...post,
+        author: post.author.name,
+        category: type?.name,
+        tags: post.tags.map((tag) => tag.tag.name),
+        images: attachments.map((img) => ({
+          ...img,
+          src: `/api/post-images/${img.id}`,
+        })),
+      }),
+    );
 
     return {
       posts: formattedPosts,
