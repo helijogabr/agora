@@ -4,11 +4,11 @@ import {
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { describe, expect, it, vi } from "vitest";
-import {
-  CloudflareR2ObjectStorageAdapter,
-  type CloudflareR2ClientLike,
-} from "@/modules/storage/infrastructure/cloudflare-r2/cloudflare-r2.adapter";
 import { ObjectStorageOperationError } from "@/modules/storage/domain/storage-errors";
+import {
+  type CloudflareR2ClientLike,
+  CloudflareR2ObjectStorageAdapter,
+} from "@/modules/storage/infrastructure/cloudflare-r2/cloudflare-r2.adapter";
 
 function createClient(send = vi.fn().mockResolvedValue({ ETag: "etag-123" })) {
   return {

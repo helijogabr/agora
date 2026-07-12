@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { ObjectStorageConfigurationError } from "@/modules/storage/domain/storage-errors";
 import {
   OBJECT_STORAGE_DRIVER_CLOUDFLARE_R2,
   resolveObjectStorageConfig,
 } from "@/modules/storage/infrastructure/object-storage.config";
-import { ObjectStorageConfigurationError } from "@/modules/storage/domain/storage-errors";
 
 describe("object storage config", () => {
   it("resolve configuração Cloudflare R2 completa", () => {

@@ -9,8 +9,8 @@ import {
 import type {
   GetObjectResult,
   ObjectStoragePort,
-  StoreObjectInput,
   StoredObject,
+  StoreObjectInput,
 } from "../../application/ports/object-storage.port";
 import { ObjectStorageOperationError } from "../../domain/storage-errors";
 

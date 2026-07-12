@@ -1,3 +1,4 @@
+import type { ObjectStoragePort } from "@/modules/storage/application/ports/object-storage.port";
 import {
   getAttachmentSafeExtension,
   sanitizeOriginalAttachmentName,
@@ -8,7 +9,6 @@ import type {
   CreatePostRepositoryResult,
   PostRepositoryPort,
 } from "../ports/post-repository.port";
-import type { ObjectStoragePort } from "@/modules/storage/application/ports/object-storage.port";
 
 export interface IncomingAttachment {
   originalName: string;
