@@ -11,6 +11,7 @@
       "persistent": true
     },
     "_test": {
+      "dependsOn": ["push:dev"],
       "inputs": ["src/**/*", "vitest.config.*"]
     },
     "_check": {
