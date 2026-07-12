@@ -88,18 +88,18 @@ export const onRequest = defineMiddleware(async (context, next) => {
   if (!userId) return redirect(context, isHtml.get);
 
   if (!user || !updatedAt) {
-    const [dbUser] = await db
-      .select({
-        name: User.name,
-        city: User.city,
-        role: User.role,
-        updatedAt: User.updatedAt,
-      })
-      .from(User)
-      .where(eq(User.id, userId))
-      .limit(1);
+    const dbUser = await db.query.User.findFirst({
+      columns: {
+        name: true,
+        city: true,
+        role: true,
+        updatedAt: true,
+      },
+      where: eq(User.id, userId),
+    });
 
     if (!dbUser) {
+      console.error("User not found in database. Destroying session.");
       context.session?.destroy();
       return redirect(context, isHtml.get);
     }

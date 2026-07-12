@@ -351,7 +351,7 @@ export const likePost = defineAction({
 export const getPostTypes = defineAction({
   input: z.void(),
   handler: async () => {
-    const postTypes = await db.select().from(PostType).all();
+    const postTypes = await db.query.PostType.findMany();
 
     return {
       postTypes,
@@ -362,7 +362,7 @@ export const getPostTypes = defineAction({
 export const getTags = defineAction({
   input: z.void(),
   handler: async () => {
-    const tags = await db.select().from(Tag).all();
+    const tags = await db.query.Tag.findMany();
 
     return {
       tags,

@@ -14,12 +14,10 @@ export const createUserForm = defineAction({
   handler: async (input, { session, cookies, url }) => {
     const { username, city, password } = input;
 
-    const existingUser = await db
-      .select()
-      .from(User)
-      .where(eq(User.name, username))
-      .limit(1)
-      .then((rows) => rows[0]);
+    const existingUser = await db.query.User.findFirst({
+      columns: { id: true },
+      where: eq(User.name, username),
+    });
 
     if (existingUser) {
       throw new ActionError({
@@ -29,13 +27,14 @@ export const createUserForm = defineAction({
     }
 
     const hashed = await bcrypt.hash(password, 10);
+    const createdAt = new Date();
 
     const result = await db.insert(User).values({
       name: username,
       password: hashed,
       city,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt,
+      updatedAt: createdAt,
     });
 
     if (!result.lastInsertRowid) {
@@ -69,18 +68,16 @@ export const loginForm = defineAction({
 
     cookies.delete("hasCache", { path: "/" });
 
-    const user = await db
-      .select({
-        id: User.id,
-        name: User.name,
-        password: User.password,
-        city: User.city,
-        role: User.role,
-      })
-      .from(User)
-      .where(eq(User.name, username))
-      .limit(1)
-      .then((rows) => rows[0]);
+    const user = await db.query.User.findFirst({
+      columns: {
+        id: true,
+        name: true,
+        password: true,
+        city: true,
+        role: true,
+      },
+      where: eq(User.name, username),
+    });
 
     if (!user) {
       throw new ActionError({
