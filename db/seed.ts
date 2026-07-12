@@ -1,6 +1,6 @@
-import { db, Post, PostType, Tag, User } from "astro:db";
-
 import bcrypt from "bcrypt";
+import type { LibSQLDatabase } from "drizzle-orm/libsql";
+import { Post, PostType, Tag, User } from "./schema";
 
 function getDateHoursAgo(hours: number) {
   const date = new Date();
@@ -9,8 +9,7 @@ function getDateHoursAgo(hours: number) {
   return date;
 }
 
-// https://astro.build/db/seed
-export default async function seed() {
+export default async function seed(db: LibSQLDatabase) {
   await db.insert(User).values([
     {
       id: 1,
@@ -59,7 +58,7 @@ export default async function seed() {
 
   await db.insert(Post).values([
     {
-      author: 1,
+      authorId: 1,
       content: "Hello, this is Alice's first post!",
       title: "Alice's First Post",
       postType: 1,
@@ -72,7 +71,7 @@ export default async function seed() {
       updatedAt: getDateHoursAgo(4),
     },
     {
-      author: 2,
+      authorId: 2,
       content: "Hi, Bob here. This is my first post.",
       title: "Bob's First Post",
       postType: 2,
@@ -80,7 +79,7 @@ export default async function seed() {
       updatedAt: getDateHoursAgo(3),
     },
     {
-      author: 1,
+      authorId: 1,
       content: "Alice again! Just wanted to share another post.",
       title: "Alice's Second Post",
       postType: 3,
@@ -93,7 +92,7 @@ export default async function seed() {
       updatedAt: getDateHoursAgo(2),
     },
     {
-      author: 2,
+      authorId: 2,
       content: "Bob's back with another post. Hope you like it!",
       title: "Bob's Second Post",
       postType: 4,

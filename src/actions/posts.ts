@@ -1,4 +1,5 @@
 import { ActionError, defineAction } from "astro:actions";
+import { z } from "astro/zod";
 import {
   and,
   count,
@@ -14,8 +15,7 @@ import {
   PostType,
   Tag,
   User,
-} from "astro:db";
-import { z } from "astro/zod";
+} from "@/db";
 import { validateAttachmentDescriptors } from "@/modules/posts/domain/attachment-policy";
 import {
   AttachmentValidationError,
@@ -61,18 +61,18 @@ export const getPosts = defineAction({
         street: Post.street,
         number: Post.number,
         author: User.name,
-        likes: count(Likes.post),
+        likes: count(Likes.postId),
         liked: exists(
           db
             .select()
             .from(Likes)
-            .where(and(eq(Likes.user, user.id), eq(Likes.post, Post.id))),
+            .where(and(eq(Likes.userId, user.id), eq(Likes.postId, Post.id))),
         ).mapWith((exists) => Boolean(+exists)),
       })
       .from(Post)
-      .innerJoin(User, eq(Post.author, User.id))
+      .innerJoin(User, eq(Post.authorId, User.id))
       .innerJoin(PostType, eq(Post.postType, PostType.id))
-      .leftJoin(Likes, eq(Likes.post, Post.id))
+      .leftJoin(Likes, eq(Likes.postId, Post.id))
       .where(cursor ? lt(Post.updatedAt, new Date(cursor)) : undefined)
       .orderBy(desc(Post.updatedAt))
       .groupBy(Post.id, User.id, PostType.id)
@@ -88,8 +88,8 @@ export const getPosts = defineAction({
         const postTags = await db
           .select({ name: Tag.name })
           .from(PostTag)
-          .innerJoin(Tag, eq(PostTag.tag, Tag.id))
-          .where(eq(PostTag.post, post.id))
+          .innerJoin(Tag, eq(PostTag.tagId, Tag.id))
+          .where(eq(PostTag.postId, post.id))
           .all();
 
         const images = await db
@@ -100,14 +100,14 @@ export const getPosts = defineAction({
             sizeBytes: PostAttachment.sizeBytes,
           })
           .from(PostAttachment)
-          .where(eq(PostAttachment.post, post.id))
+          .where(eq(PostAttachment.postId, post.id))
           .all();
 
         return {
           ...post,
           tags: postTags.map((tag) => tag.name),
           images: images
-            .filter((image) => image.contentType.startsWith("image/"))
+            .filter((image) => image.contentType?.startsWith("image/"))
             .map((image) => ({
               ...image,
               src: `/api/post-images/${image.id}`,
@@ -214,13 +214,7 @@ export const deletePost = defineAction({
     const where =
       user.info.role === "admin"
         ? eq(Post.id, postId)
-        : and(eq(Post.id, postId), eq(Post.author, user.id));
-
-    await db.delete(Likes).where(eq(Likes.post, postId));
-
-    await db.delete(PostAttachment).where(eq(PostAttachment.post, postId));
-
-    await db.delete(PostTag).where(eq(PostTag.post, postId));
+        : and(eq(Post.id, postId), eq(Post.authorId, user.id));
 
     const res = await db
       .delete(Post)
@@ -321,8 +315,8 @@ export const likePost = defineAction({
       const res = await db
         .insert(Likes)
         .values({
-          user: userId,
-          post: postId,
+          userId,
+          postId,
           createdAt: new Date(),
         })
         .onConflictDoNothing()
@@ -333,7 +327,7 @@ export const likePost = defineAction({
     } else {
       await db
         .delete(Likes)
-        .where(and(eq(Likes.user, userId), eq(Likes.post, postId)))
+        .where(and(eq(Likes.userId, userId), eq(Likes.postId, postId)))
         .then((res) => res.rowsAffected);
 
       // delete fails silently, its never liked
@@ -343,7 +337,7 @@ export const likePost = defineAction({
     const res = await db
       .select({ count: count() })
       .from(Likes)
-      .where(eq(Likes.post, postId))
+      .where(eq(Likes.postId, postId))
       .get();
 
     return {

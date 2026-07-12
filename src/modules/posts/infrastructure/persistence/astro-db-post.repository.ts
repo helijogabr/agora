@@ -1,10 +1,10 @@
-import { and, db, eq, Post, PostAttachment, PostTag } from "astro:db";
-import { PostPersistenceError } from "../../domain/post-errors";
+import { and, db, eq, Post, PostAttachment, PostTag } from "@/db";
 import type {
   CreatePostRepositoryInput,
   CreatePostRepositoryResult,
   PostRepositoryPort,
 } from "../../application/ports/post-repository.port";
+import { PostPersistenceError } from "../../domain/post-errors";
 
 export class AstroDbPostRepository implements PostRepositoryPort {
   async createPostWithAttachments(
@@ -17,7 +17,7 @@ export class AstroDbPostRepository implements PostRepositoryPort {
       const result = await db.insert(Post).values({
         title: input.title,
         content: input.content,
-        author: input.authorId,
+        authorId: input.authorId,
         postType: input.postType,
         zipCode: input.address?.zipCode,
         city: input.address?.city,
@@ -41,8 +41,8 @@ export class AstroDbPostRepository implements PostRepositoryPort {
           .insert(PostTag)
           .values(
             input.tagIds.map((tagId) => ({
-              post: createdPostId,
-              tag: tagId,
+              postId: createdPostId,
+              tagId,
             })),
           )
           .onConflictDoNothing();
@@ -51,7 +51,7 @@ export class AstroDbPostRepository implements PostRepositoryPort {
       if (input.attachments.length > 0) {
         await db.insert(PostAttachment).values(
           input.attachments.map((attachment) => ({
-            post: createdPostId,
+            postId: createdPostId,
             originalName: attachment.originalName,
             contentType: attachment.contentType,
             sizeBytes: attachment.sizeBytes,
@@ -87,8 +87,8 @@ export class AstroDbPostRepository implements PostRepositoryPort {
     primaryError: unknown,
   ): Promise<void> {
     try {
-      await db.delete(PostAttachment).where(eq(PostAttachment.post, postId));
-      await db.delete(PostTag).where(eq(PostTag.post, postId));
+      await db.delete(PostAttachment).where(eq(PostAttachment.postId, postId));
+      await db.delete(PostTag).where(eq(PostTag.postId, postId));
       await db.delete(Post).where(and(eq(Post.id, postId)));
     } catch (rollbackError) {
       console.error("Falha ao reverter post após erro de persistência.", {

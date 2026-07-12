@@ -1,39 +1,16 @@
-import { db, eq, Session } from "astro:db";
 import type { SessionDriver } from "astro";
+import { kv } from "../../src/db";
 
-export default function (_: unknown): SessionDriver {
+export default function (): SessionDriver {
   return {
     async getItem(key) {
-      const sessions = await db
-        .select()
-        .from(Session)
-        .where(eq(Session.key, key))
-        .limit(1);
-
-      const session = sessions[0];
-
-      if (!session) {
-        return null;
-      }
-
-      return session.value;
+      return kv.get(`session:${key}`);
     },
     async setItem(key, value) {
-      await db
-        .insert(Session)
-        .values({
-          key,
-          value,
-        })
-        .onConflictDoUpdate({
-          target: Session.key,
-          set: {
-            value,
-          },
-        });
+      await kv.set(`session:${key}`, value, "EX", 60 * 60 * 24 * 7);
     },
     async removeItem(key) {
-      await db.delete(Session).where(eq(Session.key, key));
+      await kv.del(`session:${key}`);
     },
   };
 }

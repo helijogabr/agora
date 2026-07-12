@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { db, eq, PostAttachment } from "astro:db";
+import { db, eq, PostAttachment } from "@/db";
 import { createObjectStorageFromEnv } from "@/modules/storage/infrastructure/object-storage.factory";
 
 export const GET: APIRoute = async ({ params }) => {
@@ -21,7 +21,7 @@ export const GET: APIRoute = async ({ params }) => {
     .limit(1)
     .then((rows) => rows[0]);
 
-  if (!attachment?.contentType.startsWith("image/")) {
+  if (!attachment?.contentType?.startsWith("image/") || !attachment.storageKey) {
     return new Response("Imagem não encontrada.", { status: 404 });
   }
 
@@ -35,7 +35,7 @@ export const GET: APIRoute = async ({ params }) => {
       headers: {
         "Cache-Control": "private, max-age=300",
         "Content-Length": String(object.contentLength ?? attachment.sizeBytes),
-        "Content-Type": object.contentType ?? attachment.contentType,
+        "Content-Type": object.contentType ?? attachment.contentType ?? undefined,
       },
     });
   } catch (error) {

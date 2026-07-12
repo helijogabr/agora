@@ -5,7 +5,7 @@
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
     "package.json": "pnpm-lock.yaml, .nvmrc, .node-version, pnpm-workspace.yaml",
-    "astro.config.*": "tsconfig.json, .gitignore, .gitattributes",
+    "astro.config.*": "tsconfig.json, .gitignore, .gitattributes, drizzle.config.*",
     ".editorconfig": "biome.json, .prettierrc, .prettierignore",
     ".env": ".env*"
   },

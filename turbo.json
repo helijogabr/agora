@@ -1,0 +1,33 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "build:web": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "build/**", ".astro/**"]
+    },
+    "dev:web": {
+      "dependsOn": ["migrate:dev"],
+      "cache": false,
+      "persistent": true
+    },
+    "preview:web": {
+      "cache": false,
+      "persistent": true
+    },
+    "generate": {
+      "inputs": ["db/schema.ts", "drizzle.config.ts"],
+      "outputs": ["db/migrations/**"]
+    },
+    "migrate": {
+      "dependsOn": ["generate"],
+      "inputs": ["db/schema.ts", "drizzle.config.ts"],
+      "cache": false
+    },
+    "migrate:dev": {
+      "dependsOn": ["generate"],
+      "inputs": ["db/schema.ts", "drizzle.config.dev.ts"],
+      "cache": false
+    }
+  }
+}
