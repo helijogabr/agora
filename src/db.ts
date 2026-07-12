@@ -10,7 +10,7 @@ console.log("INITIALIZING DATABASE CONNECTIONS...");
 
 export const kv: Redis = import.meta.env.DEV
   ? new (await import("ioredis-mock")).default({ db: 0 })
-  : new (await import("ioredis")).default({ host: REDIS_URL, db: 0 });
+  : new (await import("ioredis")).default(REDIS_URL, { db: 0 });
 
 export const db = drizzle({
   connection: {
