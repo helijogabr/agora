@@ -77,21 +77,18 @@ vi.mock("astro:actions", () => ({
   },
 }));
 
-const mockDbSelectChain = {
-  from: vi.fn().mockReturnThis(),
-  where: vi.fn().mockReturnThis(),
-  limit: vi.fn().mockReturnThis(),
-  // biome-ignore lint/suspicious/noThenProperty: <aaa>
-  then: vi.fn(),
-};
-
-const mockDbInsertChain = {
+const mockUserFindFirst = vi.hoisted(() => vi.fn());
+const mockDbInsertChain = vi.hoisted(() => ({
   values: vi.fn(),
-};
+}));
 
-vi.mock("astro:db", () => ({
+vi.mock("@/db", () => ({
   db: {
-    select: vi.fn(() => mockDbSelectChain),
+    query: {
+      User: {
+        findFirst: mockUserFindFirst,
+      },
+    },
     insert: vi.fn(() => mockDbInsertChain),
   },
   eq: vi.fn(),
@@ -133,7 +130,7 @@ describe("auth.ts actions", () => {
         city: "São Paulo",
       };
 
-      mockDbSelectChain.then.mockResolvedValueOnce(undefined);
+      mockUserFindFirst.mockResolvedValueOnce(undefined);
       vi.mocked(bcrypt.hash).mockResolvedValueOnce("senha_hasheada" as never);
       mockDbInsertChain.values.mockResolvedValueOnce({ lastInsertRowid: 10 });
 
@@ -168,7 +165,7 @@ describe("auth.ts actions", () => {
         redirect: "/perfil",
       };
 
-      mockDbSelectChain.then.mockResolvedValueOnce(undefined);
+      mockUserFindFirst.mockResolvedValueOnce(undefined);
       vi.mocked(bcrypt.hash).mockResolvedValueOnce("senha_hasheada" as never);
       mockDbInsertChain.values.mockResolvedValueOnce({ lastInsertRowid: 11 });
 
@@ -185,7 +182,7 @@ describe("auth.ts actions", () => {
         city: "São Paulo",
       };
 
-      mockDbSelectChain.then.mockResolvedValueOnce(undefined);
+      mockUserFindFirst.mockResolvedValueOnce(undefined);
       vi.mocked(bcrypt.hash).mockResolvedValueOnce("senha_hasheada" as never);
       mockDbInsertChain.values.mockResolvedValueOnce({ lastInsertRowid: 12 });
 
@@ -202,7 +199,7 @@ describe("auth.ts actions", () => {
         city: "São Paulo",
       };
 
-      mockDbSelectChain.then.mockResolvedValueOnce({
+      mockUserFindFirst.mockResolvedValueOnce({
         id: 1,
         name: "existente",
       });
@@ -223,7 +220,7 @@ describe("auth.ts actions", () => {
         city: "São Paulo",
       };
 
-      mockDbSelectChain.then.mockResolvedValueOnce(undefined);
+      mockUserFindFirst.mockResolvedValueOnce(undefined);
       vi.mocked(bcrypt.hash).mockResolvedValueOnce("hash" as never);
       mockDbInsertChain.values.mockResolvedValueOnce({});
 
@@ -241,7 +238,7 @@ describe("auth.ts actions", () => {
       const context = getBaseContext();
       const input: LoginInput = { username: "teste", password: "123" };
 
-      mockDbSelectChain.then.mockResolvedValueOnce({
+      mockUserFindFirst.mockResolvedValueOnce({
         id: 1,
         name: "teste",
         password: "hash",
@@ -266,7 +263,7 @@ describe("auth.ts actions", () => {
       const context = getBaseContext("http://localhost?return=/feed");
       const input: LoginInput = { username: "teste", password: "123" };
 
-      mockDbSelectChain.then.mockResolvedValueOnce({
+      mockUserFindFirst.mockResolvedValueOnce({
         id: 1,
         name: "teste",
         password: "hash",
@@ -292,7 +289,7 @@ describe("auth.ts actions", () => {
         redirect: "/perfil",
       };
 
-      mockDbSelectChain.then.mockResolvedValueOnce({
+      mockUserFindFirst.mockResolvedValueOnce({
         id: 1,
         name: "teste",
         password: "hash",
@@ -314,7 +311,7 @@ describe("auth.ts actions", () => {
       const context = getBaseContext();
       const input: LoginInput = { username: "fantasma", password: "123" };
 
-      mockDbSelectChain.then.mockResolvedValueOnce(undefined);
+      mockUserFindFirst.mockResolvedValueOnce(undefined);
 
       await expect(
         loginFormAction.handler(input, context),
@@ -328,7 +325,7 @@ describe("auth.ts actions", () => {
       const context = getBaseContext();
       const input: LoginInput = { username: "teste", password: "errada" };
 
-      mockDbSelectChain.then.mockResolvedValueOnce({ id: 1, password: "hash" });
+      mockUserFindFirst.mockResolvedValueOnce({ id: 1, password: "hash" });
       vi.mocked(bcrypt.compare).mockResolvedValueOnce(false as never);
 
       await expect(

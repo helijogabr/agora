@@ -108,11 +108,19 @@ const mockQueryBuilder: MockQueryBuilder = {
   }),
 };
 
-vi.mock("astro:db", () => ({
+vi.mock("@/db", () => ({
   db: {
     select: vi.fn(() => mockQueryBuilder),
     insert: vi.fn(() => mockQueryBuilder),
     delete: vi.fn(() => mockQueryBuilder),
+    query: {
+      PostType: {
+        findMany: vi.fn(),
+      },
+      Tag: {
+        findMany: vi.fn(),
+      },
+    },
   },
 
   eq: vi.fn(),

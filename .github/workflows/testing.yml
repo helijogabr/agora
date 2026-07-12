@@ -17,6 +17,8 @@ jobs:
   ci-pipeline:
     env:
       HAS_DB_SECRETS: ${{ secrets.ASTRO_DB_APP_TOKEN_READONLY != '' }}
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
     runs-on: ubuntu-latest
     steps:
@@ -38,24 +40,28 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Astro Sync
-        run: pnpm astro sync
+        run: pnpm run sync
 
       - name: Biome linting
-        run: pnpm biome lint
+        run: pnpm run lint
 
       - name: Astro check
-        run: pnpm astro check --remote
+        run: pnpm run check
+
+      - name: DB check
+        if: env.HAS_DB_SECRETS == 'true'
+        run: pnpm run db:check
 
       - name: TypeScript type checking
-        run: pnpm tsc --noEmit
+        run: pnpm run typecheck
 
       - name: Run unit tests
-        run: pnpm vitest run --passWithNoTests
+        run: pnpm run test
 
       - name: Compiling test
         if: env.HAS_DB_SECRETS == 'true'
         shell: bash
-        run: pnpm astro build --remote
+        run: pnpm run build
         env:
           ASTRO_DB_APP_TOKEN: ${{ secrets.ASTRO_DB_APP_TOKEN_READONLY }}
           ASTRO_DB_REMOTE_URL: ${{ secrets.ASTRO_DB_REMOTE_URL }}
