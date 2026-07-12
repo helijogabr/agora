@@ -88,6 +88,7 @@ export default defineConfig({
   adapter: vercel(),
   session: {
     driver: dbDriver(),
+    ttl: 1000 * 60 * 60 * 24
   },
   security: {
     actionBodySizeLimit: 4_500_000,

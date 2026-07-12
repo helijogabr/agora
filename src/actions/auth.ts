@@ -45,7 +45,6 @@ export const createUserForm = defineAction({
       });
     }
 
-    session?.destroy();
     cookies.delete("hasCache", { path: "/" });
     session?.set("userId", Number(result.lastInsertRowid), {
       ttl: 1000 * 60 * 60 * 24, // 1 day
@@ -69,7 +68,6 @@ export const loginForm = defineAction({
     const { username, password } = input;
 
     cookies.delete("hasCache", { path: "/" });
-    session?.destroy();
 
     const user = await db
       .select({
