@@ -71,7 +71,7 @@ export const getPosts = defineAction({
       })
       .from(Post)
       .innerJoin(User, eq(Post.authorId, User.id))
-      .innerJoin(PostType, eq(Post.postType, PostType.id))
+      .leftJoin(PostType, eq(Post.postType, PostType.id))
       .leftJoin(Likes, eq(Likes.postId, Post.id))
       .where(cursor ? lt(Post.updatedAt, new Date(cursor)) : undefined)
       .orderBy(desc(Post.updatedAt))

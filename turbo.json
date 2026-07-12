@@ -7,7 +7,7 @@
       "outputs": ["dist/**", "build/**", ".astro/**"]
     },
     "dev:web": {
-      "dependsOn": ["migrate:dev"],
+      "dependsOn": ["push:dev"],
       "cache": false,
       "persistent": true
     },
@@ -15,18 +15,12 @@
       "cache": false,
       "persistent": true
     },
-    "generate": {
-      "inputs": ["db/schema.ts", "drizzle.config.ts"],
-      "outputs": ["db/migrations/**"]
-    },
-    "migrate": {
-      "dependsOn": ["generate"],
-      "inputs": ["db/schema.ts", "drizzle.config.ts"],
+    "push:dev": {
+      "inputs": ["db/schema.ts", "drizzle.config.dev.ts"],
       "cache": false
     },
-    "migrate:dev": {
-      "dependsOn": ["generate"],
-      "inputs": ["db/schema.ts", "drizzle.config.dev.ts"],
+    "push:prod": {
+      "inputs": ["db/schema.ts", "drizzle.config.ts"],
       "cache": false
     }
   }

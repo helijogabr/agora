@@ -14,9 +14,8 @@
     "preview:web": "astro preview",
     "astro": "astro",
     "test": "vitest",
-    "generate": "drizzle-kit generate",
-    "migrate": "drizzle-kit migrate --config=drizzle.config.prod.ts",
-    "migrate:dev": "drizzle-kit migrate"
+    "push:dev": "drizzle-kit push --force --config drizzle.config.dev.ts",
+    "push:prod": "drizzle-kit push --config drizzle.config.ts"
   },
   "devEngines": {
     "packageManager": {

@@ -84,16 +84,16 @@ export const PostAttachment = sqliteTable(
   "post_attachments",
   {
     id: integer().primaryKey(),
-    postId: integer()
+    postId: integer("post_id")
       .notNull()
       .references(() => Post.id, {
         onDelete: "cascade",
       }),
-    originalName: text().notNull(),
-    contentType: text().notNull(),
-    sizeBytes: integer().notNull(),
-    storageKey: text().unique().notNull(),
-    storageProvider: text().notNull(),
+    originalName: text("original_name").notNull(),
+    contentType: text("content_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    storageKey: text("storage_key").unique().notNull(),
+    storageProvider: text("storage_provider").notNull(),
     etag: text(),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
