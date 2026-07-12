@@ -12,17 +12,11 @@ export const User = sqliteTable("users", {
   name: text().notNull().unique(),
   password: text().notNull(),
   city: text().notNull(),
-  role: text({
-    enum: ["admin", "user"],
-  }),
-  createdAt: integer("created_at", {
-    mode: "timestamp",
-  })
+  role: text({ enum: ["admin", "user"] }),
+  createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
-  updatedAt: integer("updated_at", {
-    mode: "timestamp",
-  })
+  updatedAt: integer("updated_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
 });
@@ -40,14 +34,10 @@ export const Post = sqliteTable(
     content: text().notNull(),
     authorId: integer("author_id")
       .notNull()
-      .references(() => User.id, {
-        onDelete: "cascade",
-      }),
+      .references(() => User.id, { onDelete: "cascade" }),
     postType: integer("post_type")
       .notNull()
-      .references(() => PostType.id, {
-        onDelete: "cascade",
-      }),
+      .references(() => PostType.id, { onDelete: "cascade" }),
     city: text(),
     zipCode: text("zip_code"),
     district: text(),
@@ -63,7 +53,9 @@ export const Post = sqliteTable(
   (t) => [
     index("post_authorId_idx").on(t.authorId),
     index("post_postType_idx").on(t.postType),
-    index("post_date_idx").on(t.createdAt),
+    index("post_createdAt_idx").on(t.createdAt),
+    index("post_updatedAt_idx").on(t.updatedAt),
+    index("post_city_idx").on(t.city),
   ],
 );
 
@@ -86,9 +78,7 @@ export const PostAttachment = sqliteTable(
     id: integer().primaryKey(),
     postId: integer("post_id")
       .notNull()
-      .references(() => Post.id, {
-        onDelete: "cascade",
-      }),
+      .references(() => Post.id, { onDelete: "cascade" }),
     originalName: text("original_name").notNull(),
     contentType: text("content_type").notNull(),
     sizeBytes: integer("size_bytes").notNull(),
@@ -99,7 +89,10 @@ export const PostAttachment = sqliteTable(
       .notNull()
       .default(sql`(unixepoch())`),
   },
-  (t) => [index("post_attachment_postId_idx").on(t.postId)],
+  (t) => [
+    index("post_attachment_postId_idx").on(t.postId),
+    index("post_attachment_contentType_idx").on(t.contentType),
+  ],
 );
 
 export const AttachmentRel = relations(PostAttachment, ({ one }) => ({
@@ -123,16 +116,17 @@ export const PostTag = sqliteTable(
   {
     postId: integer("post_id")
       .notNull()
-      .references(() => Post.id, {
-        onDelete: "cascade",
-      }),
+      .references(() => Post.id, { onDelete: "cascade" }),
     tagId: integer("tag_id")
       .notNull()
-      .references(() => Tag.id, {
-        onDelete: "cascade",
-      }),
+      .references(() => Tag.id, { onDelete: "cascade" }),
   },
-  (t) => [primaryKey({ columns: [t.postId, t.tagId] })],
+  (t) => [
+    primaryKey({ columns: [t.postId, t.tagId] }),
+    index("post_tag_tagId_idx").on(t.tagId),
+    index("post_tag_postId_idx").on(t.postId),
+    index("post_tag_postId_tagId_idx").on(t.postId, t.tagId),
+  ],
 );
 
 export const PostTagRel = relations(PostTag, ({ one }) => ({
@@ -160,19 +154,20 @@ export const Likes = sqliteTable(
   {
     userId: integer("user_id")
       .notNull()
-      .references(() => User.id, {
-        onDelete: "cascade",
-      }),
+      .references(() => User.id, { onDelete: "cascade" }),
     postId: integer("post_id")
       .notNull()
-      .references(() => Post.id, {
-        onDelete: "cascade",
-      }),
+      .references(() => Post.id, { onDelete: "cascade" }),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .default(sql`(unixepoch())`),
   },
-  (t) => [primaryKey({ columns: [t.userId, t.postId] })],
+  (t) => [
+    primaryKey({ columns: [t.userId, t.postId] }),
+    index("likes_postId_idx").on(t.postId),
+    index("likes_userId_idx").on(t.userId),
+    index("likes_postId_userId_idx").on(t.postId, t.userId),
+  ],
 );
 
 export const LikesRel = relations(Likes, ({ one }) => ({

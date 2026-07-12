@@ -1,21 +1,6 @@
 import { ActionError, defineAction } from "astro:actions";
 import { z } from "astro/zod";
-import {
-  and,
-  count,
-  db,
-  desc,
-  eq,
-  exists,
-  Likes,
-  lt,
-  Post,
-  PostAttachment,
-  PostTag,
-  PostType,
-  Tag,
-  User,
-} from "@/db";
+import { and, count, db, eq, exists, Likes, Post } from "@/db";
 import { validateAttachmentDescriptors } from "@/modules/posts/domain/attachment-policy";
 import {
   AttachmentValidationError,
@@ -47,77 +32,87 @@ export const getPosts = defineAction({
 
     const user = locals.user;
 
-    const posts = await db
-      .select({
-        id: Post.id,
-        title: Post.title,
-        content: Post.content,
-        createdAt: Post.createdAt,
-        updatedAt: Post.updatedAt,
-        category: PostType.name,
-        zipCode: Post.zipCode,
-        city: Post.city,
-        district: Post.district,
-        street: Post.street,
-        number: Post.number,
-        author: User.name,
-        likes: count(Likes.postId),
+    const query = db.query.Post.findMany({
+      columns: {
+        id: true,
+        title: true,
+        content: true,
+        createdAt: true,
+        updatedAt: true,
+        zipCode: true,
+        city: true,
+        district: true,
+        street: true,
+        number: true,
+      },
+      where: (posts, { lt }) =>
+        cursor ? lt(posts.updatedAt, new Date(cursor)) : undefined,
+      orderBy: (posts, { desc }) => [desc(posts.updatedAt)],
+      limit: limit + 1,
+      with: {
+        author: {
+          columns: { name: true },
+        },
+        type: {
+          columns: { name: true },
+        },
+        tags: {
+          columns: {},
+          with: {
+            tag: {
+              columns: { name: true, id: true },
+            },
+          },
+        },
+        attachments: {
+          where: (attachments, { like }) =>
+            like(attachments.contentType, "image/%"),
+          columns: {
+            id: true,
+            originalName: true,
+            contentType: true,
+            sizeBytes: true,
+          },
+        },
+      },
+      extras: (table, { sql }) => ({
+        likes:
+          sql`(SELECT COUNT(*) FROM ${Likes} WHERE ${Likes.postId} = ${table.id})`.as(
+            "likes",
+          ),
         liked: exists(
           db
-            .select()
+            .select({ n: sql`1` })
             .from(Likes)
-            .where(and(eq(Likes.userId, user.id), eq(Likes.postId, Post.id))),
-        ).mapWith((exists) => Boolean(+exists)),
-      })
-      .from(Post)
-      .innerJoin(User, eq(Post.authorId, User.id))
-      .leftJoin(PostType, eq(Post.postType, PostType.id))
-      .leftJoin(Likes, eq(Likes.postId, Post.id))
-      .where(cursor ? lt(Post.updatedAt, new Date(cursor)) : undefined)
-      .orderBy(desc(Post.updatedAt))
-      .groupBy(Post.id, User.id, PostType.id)
-      .limit(limit + 1);
+            .where(and(eq(Likes.userId, user.id), eq(Likes.postId, table.id))),
+        )
+          .mapWith((exists) => Boolean(+exists))
+          .as("liked"),
+      }),
+    });
+
+    console.log(query.toSQL());
+    const posts = await query;
 
     const extra = posts.length > limit ? posts.pop() : undefined;
     const last = posts.at(-1);
-
     const nextCursor = extra && last?.updatedAt;
 
-    const postsWithTags = await Promise.all(
-      posts.map(async (post) => {
-        const postTags = await db
-          .select({ name: Tag.name })
-          .from(PostTag)
-          .innerJoin(Tag, eq(PostTag.tagId, Tag.id))
-          .where(eq(PostTag.postId, post.id))
-          .all();
-
-        const images = await db
-          .select({
-            id: PostAttachment.id,
-            originalName: PostAttachment.originalName,
-            contentType: PostAttachment.contentType,
-            sizeBytes: PostAttachment.sizeBytes,
-          })
-          .from(PostAttachment)
-          .where(eq(PostAttachment.postId, post.id))
-          .all();
-
-        return {
-          ...post,
-          tags: postTags.map((tag) => tag.name),
-          images: images
-            .filter((image) => image.contentType?.startsWith("image/"))
-            .map((image) => ({
-              ...image,
-              src: `/api/post-images/${image.id}`,
-            })),
-        };
-      }),
-    );
+    const formattedPosts = posts.map((post) => ({
+      ...post,
+      author: post.author.name,
+      category: post.type?.name,
+      tags: post.tags.map((tag) => tag.tag.name),
+      images: post.attachments.map((img) => ({
+        ...img,
+        src: `/api/post-images/${img.id}`,
+      })),
+      postTags: undefined,
+      attachments: undefined,
+    }));
 
     return {
-      posts: postsWithTags,
+      posts: formattedPosts,
       nextCursor,
     };
   },
