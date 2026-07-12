@@ -32,7 +32,7 @@ export const getPosts = defineAction({
 
     const user = locals.user;
 
-    const query = db.query.Post.findMany({
+    const posts = await db.query.Post.findMany({
       columns: {
         id: true,
         title: true,
@@ -90,9 +90,6 @@ export const getPosts = defineAction({
           .as("liked"),
       }),
     });
-
-    console.log(query.toSQL());
-    const posts = await query;
 
     const extra = posts.length > limit ? posts.pop() : undefined;
     const last = posts.at(-1);

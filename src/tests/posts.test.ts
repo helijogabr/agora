@@ -60,6 +60,7 @@ const likePostAction = withHandler<
 type QueryBuilderThenCallback = (value: unknown) => unknown;
 type MockQueryBuilder = {
   __resolveValue: unknown;
+  toSQL: ReturnType<typeof vi.fn>;
   from: ReturnType<typeof vi.fn>;
   innerJoin: ReturnType<typeof vi.fn>;
   leftJoin: ReturnType<typeof vi.fn>;
@@ -88,6 +89,7 @@ vi.mock("astro:actions", () => ({
 
 const mockQueryBuilder: MockQueryBuilder = {
   __resolveValue: undefined,
+  toSQL: vi.fn(() => ({ sql: "mock", params: [] })),
   from: vi.fn().mockReturnThis(),
   innerJoin: vi.fn().mockReturnThis(),
   leftJoin: vi.fn().mockReturnThis(),
@@ -114,6 +116,9 @@ vi.mock("@/db", () => ({
     insert: vi.fn(() => mockQueryBuilder),
     delete: vi.fn(() => mockQueryBuilder),
     query: {
+      Post: {
+        findMany: vi.fn(() => mockQueryBuilder),
+      },
       PostType: {
         findMany: vi.fn(),
       },
@@ -190,9 +195,30 @@ describe("posts.ts actions", () => {
       const d3 = new Date("2024-01-03");
 
       mockQueryBuilder.__resolveValue = [
-        { id: 1, updatedAt: d1 },
-        { id: 2, updatedAt: d2 },
-        { id: 3, updatedAt: d3 },
+        {
+          id: 1,
+          updatedAt: d1,
+          author: { name: "alice" },
+          type: { name: "news" },
+          tags: [],
+          attachments: [],
+        },
+        {
+          id: 2,
+          updatedAt: d2,
+          author: { name: "bob" },
+          type: { name: "events" },
+          tags: [],
+          attachments: [],
+        },
+        {
+          id: 3,
+          updatedAt: d3,
+          author: { name: "carol" },
+          type: { name: "alerts" },
+          tags: [],
+          attachments: [],
+        },
       ];
 
       const input: GetPostsInput = { limit: 2, cursor: null };
@@ -200,21 +226,50 @@ describe("posts.ts actions", () => {
 
       expect(result.posts).toHaveLength(2);
       expect(result.posts).toEqual([
-        { id: 1, updatedAt: d1, tags: [], images: [] },
-        { id: 2, updatedAt: d2, tags: [], images: [] },
+        {
+          id: 1,
+          updatedAt: d1,
+          author: "alice",
+          category: "news",
+          tags: [],
+          images: [],
+        },
+        {
+          id: 2,
+          updatedAt: d2,
+          author: "bob",
+          category: "events",
+          tags: [],
+          images: [],
+        },
       ]);
       expect(result.nextCursor).toEqual(d2);
     });
 
     it("não deve definir nextCursor se retornarem menos ou exatos itens que o limite", async () => {
       mockQueryBuilder.__resolveValue = [
-        { id: 1, updatedAt: new Date("2024-01-01") },
+        {
+          id: 1,
+          updatedAt: new Date("2024-01-01"),
+          author: { name: "alice" },
+          type: { name: "news" },
+          tags: [],
+          attachments: [],
+        },
       ];
 
       const input: GetPostsInput = { limit: 2, cursor: null };
       const result = await getPostsAction.handler(input, getBaseContext());
 
       expect(result.posts).toHaveLength(1);
+      expect(result.posts[0]).toEqual({
+        id: 1,
+        updatedAt: new Date("2024-01-01"),
+        author: "alice",
+        category: "news",
+        tags: [],
+        images: [],
+      });
       expect(result.nextCursor).toBeUndefined();
     });
   });
