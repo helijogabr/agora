@@ -1,6 +1,6 @@
 import { ActionError, defineAction } from "astro:actions";
 import { z } from "astro/zod";
-import { and, count, db, eq, exists, Likes, Post } from "@/db";
+import { and, count, db, eq, exists, gte, inArray, lte, sql, Likes, Post, PostTag } from "@/db";
 import { validateAttachmentDescriptors } from "@/modules/posts/domain/attachment-policy";
 import {
   AttachmentValidationError,
@@ -24,8 +24,16 @@ export const getPosts = defineAction({
       .transform((value) => (value ? new Date(value) : value))
       .nullable()
       .optional(),
+    city: z.string().trim().optional().default(""),
+    postTypeIds: z.array(z.number().int().positive()).default([]),
+    tagIds: z.array(z.number().int().positive()).default([]),
+    startDate: z.string().trim().optional().default(""),
+    endDate: z.string().trim().optional().default(""),
   }),
-  handler: async ({ cursor, limit }, { locals }) => {
+  handler: async (
+    { cursor, limit, city, postTypeIds, tagIds, startDate, endDate },
+    { locals },
+  ) => {
     if (import.meta.env.DEV) {
       await sleep(1000);
     }
@@ -45,8 +53,49 @@ export const getPosts = defineAction({
         street: true,
         number: true,
       },
-      where: (posts, { lt }) =>
-        cursor ? lt(posts.updatedAt, new Date(cursor)) : undefined,
+      where: (posts, { and: andCond, lt }) => {
+        const conditions = [];
+
+        if (cursor) {
+          conditions.push(lt(posts.updatedAt, new Date(cursor)));
+        }
+
+        if (city) {
+          conditions.push(
+            sql`LOWER(${posts.city}) LIKE '%' || LOWER(${city}) || '%'`,
+          );
+        }
+
+        if (postTypeIds.length > 0) {
+          conditions.push(inArray(posts.postType, postTypeIds));
+        }
+
+        if (tagIds.length > 0) {
+          conditions.push(
+            exists(
+              db
+                .select({ id: PostTag.postId })
+                .from(PostTag)
+                .where(
+                  andCond(
+                    eq(PostTag.postId, posts.id),
+                    inArray(PostTag.tagId, tagIds),
+                  ),
+                ),
+            ),
+          );
+        }
+
+        if (startDate) {
+          conditions.push(gte(posts.createdAt, new Date(startDate)));
+        }
+
+        if (endDate) {
+          conditions.push(lte(posts.createdAt, new Date(endDate)));
+        }
+
+        return conditions.length ? andCond(...conditions) : undefined;
+      },
       orderBy: (posts, { desc }) => [desc(posts.updatedAt)],
       limit: limit + 1,
       with: {

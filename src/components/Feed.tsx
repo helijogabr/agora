@@ -1,14 +1,24 @@
 import { actions } from "astro:actions";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
+import { useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { queryClient } from "@/queryClient";
 import { getUser } from "@/userStore";
+import { usePostMetadata } from "@/hooks/usePostMetadata";
 import FeedFilters from "./FeedFilters";
 import Post from "./Post";
 
 export type PostData = Awaited<
   ReturnType<typeof actions.getPosts.orThrow>
 >["posts"][number] & { ghost?: boolean };
+
+type FeedFilterPayload = {
+  city: string;
+  postTypeIds: number[];
+  tagIds: number[];
+  startDate: string;
+  endDate: string;
+};
 
 export default function Feed({
   posts,
@@ -17,14 +27,37 @@ export default function Feed({
   posts: PostData[];
   nextCursor: Date | undefined;
 }) {
-  const { data, hasNextPage, fetchNextPage, isFetching, isLoading } =
-    useInfiniteQuery(
+  const { postTypes, tags } = usePostMetadata();
+
+  const [filters, setFilters] = useState<FeedFilterPayload>({
+    city: "",
+    postTypeIds: [],
+    tagIds: [],
+    startDate: "",
+    endDate: "",
+  });
+
+  const {
+    data,
+    hasNextPage,
+    fetchNextPage,
+    isFetching,
+    isLoading,
+  } = useInfiniteQuery(
       {
-        queryKey: ["posts"],
+        queryKey: [
+          "posts",
+          filters.city,
+          filters.postTypeIds.join(","),
+          filters.tagIds.join(","),
+          filters.startDate,
+          filters.endDate,
+        ],
         queryFn: ({ pageParam: cursor }) =>
           actions.getPosts.orThrow({
             cursor,
             limit: 2,
+            ...filters,
           }),
         select: (data) => {
           const locale = getUser()?.locale;
@@ -41,10 +74,14 @@ export default function Feed({
           };
         },
         initialPageParam: null as Date | null,
-        initialData: {
-          pages: [{ posts, nextCursor }],
-          pageParams: [null as Date | null],
-        },
+        initialData:
+          filters.city || filters.postTypeIds.length || filters.tagIds.length ||
+          filters.startDate || filters.endDate
+            ? undefined
+            : {
+                pages: [{ posts, nextCursor }],
+                pageParams: [null as Date | null],
+              },
         staleTime: 1000 * 60,
         getNextPageParam: (lastPage, _) => lastPage.nextCursor,
       },
@@ -56,7 +93,11 @@ export default function Feed({
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="flex w-full max-w-2xl flex-col gap-2">
-        <FeedFilters />
+        <FeedFilters
+          postTypes={postTypes}
+          tags={tags}
+          onApply={setFilters}
+        />
         <ul ref={animate} className="flex flex-col gap-2">
           {data?.pages
             .flatMap((page) => page.posts)
@@ -64,8 +105,8 @@ export default function Feed({
               <li key={post.id}>
                 <Post
                   {...post}
-                  createdAt={post.createdAt}
-                  updatedAt={post.updatedAt}
+                  createdAt={String(post.createdAt)}
+                  updatedAt={String(post.updatedAt)}
                   liked={!!post.liked}
                 />
               </li>

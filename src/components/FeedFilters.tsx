@@ -7,9 +7,18 @@ type FilterOption = {
   name: string;
 };
 
+type FilterPayload = {
+  city: string;
+  postTypeIds: number[];
+  tagIds: number[];
+  startDate: string;
+  endDate: string;
+};
+
 type Props = {
   postTypes?: FilterOption[];
   tags?: FilterOption[];
+  onApply?: (filters: FilterPayload) => void;
 };
 
 const DEFAULT_POST_TYPES: FilterOption[] = [
@@ -56,6 +65,7 @@ function ToggleButton({
 export default function FeedFilters({
   postTypes = DEFAULT_POST_TYPES,
   tags = DEFAULT_TAGS,
+  onApply,
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<Record<FilterKey, boolean>>({
@@ -87,6 +97,16 @@ export default function FeedFilters({
         ? selectedIds.filter((item) => item !== value)
         : [...selectedIds, value],
     );
+  };
+
+  const handleApply = () => {
+    onApply?.({
+      city: activeFilters.city ? city.trim() : "",
+      postTypeIds: activeFilters.type ? selectedTypeIds : [],
+      tagIds: activeFilters.tag ? selectedTagIds : [],
+      startDate: activeFilters.date ? startDate : "",
+      endDate: activeFilters.date ? endDate : "",
+    });
   };
 
   return (
@@ -244,6 +264,7 @@ export default function FeedFilters({
           <div className="mt-4 flex justify-end">
             <button
               type="button"
+              onClick={handleApply}
               className="rounded bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700"
             >
               Aplicar filtros
