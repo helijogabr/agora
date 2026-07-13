@@ -122,6 +122,38 @@ describe("auth.ts actions", () => {
   });
 
   describe("createUserForm", () => {
+    const schema = (
+      createUserForm as unknown as {
+        input: { safeParse: (data: unknown) => { success: boolean; data?: Record<string, unknown> } };
+      }
+    ).input;
+
+    it("Classe Válida: deve aceitar dados preenchidos (e limpar espaços/caixa alta)", () => {
+      const result = schema.safeParse({
+        username: "  NovoUser  ",
+        password: "  12345  ",
+        city: "  Campinas  "
+      });
+      expect(result.success).toBe(true);
+      expect(result.data).toMatchObject({
+        username: "novouser",
+        password: "12345",
+        city: "Campinas"
+      });
+    });
+
+    it("Classe Inválida (vazia): deve rejeitar strings vazias em campos obrigatórios", () => {
+      expect(schema.safeParse({ username: "", password: "123", city: "Campinas" }).success).toBe(false);
+      expect(schema.safeParse({ username: "user", password: "", city: "Campinas" }).success).toBe(false);
+      expect(schema.safeParse({ username: "user", password: "123", city: "" }).success).toBe(false);
+    });
+
+    it("Classe Inválida (apenas espaços): deve rejeitar strings compostas apenas por espaços", () => {
+      expect(schema.safeParse({ username: "   ", password: "123", city: "Campinas" }).success).toBe(false);
+      expect(schema.safeParse({ username: "user", password: "   ", city: "Campinas" }).success).toBe(false);
+      expect(schema.safeParse({ username: "user", password: "123", city: "   " }).success).toBe(false);
+    });
+
     it("deve criar um usuário com sucesso e definir a sessão", async () => {
       const context = getBaseContext();
       const input: CreateUserInput = {
@@ -234,6 +266,23 @@ describe("auth.ts actions", () => {
   });
 
   describe("loginForm", () => {
+    const schema = (
+      loginForm as unknown as {
+        input: { safeParse: (data: unknown) => { success: boolean } };
+      }
+    ).input;
+
+    it("Classe Válida: deve aceitar dados preenchidos corretamente", () => {
+      expect(schema.safeParse({ username: "teste", password: "123" }).success).toBe(true);
+    });
+
+    it("Classe Inválida (vazia/espaços): deve barrar strings vazias ou só com espaços", () => {
+      expect(schema.safeParse({ username: "", password: "123" }).success).toBe(false);
+      expect(schema.safeParse({ username: "teste", password: "" }).success).toBe(false);
+      expect(schema.safeParse({ username: "   ", password: "123" }).success).toBe(false);
+      expect(schema.safeParse({ username: "teste", password: "   " }).success).toBe(false);
+    });
+
     it("deve logar com sucesso e definir a sessão", async () => {
       const context = getBaseContext();
       const input: LoginInput = { username: "teste", password: "123" };
