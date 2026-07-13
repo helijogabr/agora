@@ -1,10 +1,10 @@
 import { actions } from "astro:actions";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
-import { useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { usePostMetadata } from "@/hooks/usePostMetadata";
 import { queryClient } from "@/queryClient";
 import { getUser } from "@/userStore";
-import { usePostMetadata } from "@/hooks/usePostMetadata";
 import FeedFilters from "./FeedFilters";
 import Post from "./Post";
 
