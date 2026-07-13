@@ -37,6 +37,13 @@ export default function Feed({
     endDate: "",
   });
 
+  const hasFilters =
+    filters.city ||
+    filters.postTypeIds.length ||
+    filters.tagIds.length ||
+    filters.startDate ||
+    filters.endDate;
+
   const {
     data,
     hasNextPage,
@@ -44,50 +51,51 @@ export default function Feed({
     isFetching,
     isLoading,
   } = useInfiniteQuery(
-      {
-        queryKey: [
-          "posts",
-          filters.city,
-          filters.postTypeIds.join(","),
-          filters.tagIds.join(","),
-          filters.startDate,
-          filters.endDate,
-        ],
-        queryFn: ({ pageParam: cursor }) =>
-          actions.getPosts.orThrow({
-            cursor,
-            limit: 2,
-            ...filters,
-          }),
-        select: (data) => {
-          const locale = getUser()?.locale;
-
-          return {
-            pages: data.pages.map((page) => ({
-              posts: page.posts.map((post) => ({
-                ...post,
-                createdAt: new Date(post.createdAt).toLocaleString(locale),
-                updatedAt: new Date(post.updatedAt).toLocaleString(locale),
-              })),
-              nextCursor: page.nextCursor,
-            })),
-          };
+    hasFilters
+      ? {
+          queryKey: [
+            "posts",
+            filters.city,
+            filters.postTypeIds.join(","),
+            filters.tagIds.join(","),
+            filters.startDate,
+            filters.endDate,
+          ],
+          queryFn: ({ pageParam: cursor }) =>
+            actions.getPosts.orThrow({
+              cursor,
+              limit: 2,
+              ...filters,
+            }),
+          initialPageParam: null as Date | null,
+          staleTime: 1000 * 60,
+          getNextPageParam: (lastPage, _) => lastPage.nextCursor,
+        }
+      : {
+          queryKey: [
+            "posts",
+            filters.city,
+            filters.postTypeIds.join(","),
+            filters.tagIds.join(","),
+            filters.startDate,
+            filters.endDate,
+          ],
+          queryFn: ({ pageParam: cursor }) =>
+            actions.getPosts.orThrow({
+              cursor,
+              limit: 2,
+              ...filters,
+            }),
+          initialPageParam: null as Date | null,
+          initialData: {
+            pages: [{ posts, nextCursor }],
+            pageParams: [null as Date | null],
+          },
+          staleTime: 1000 * 60,
+          getNextPageParam: (lastPage, _) => lastPage.nextCursor,
         },
-        initialPageParam: null as Date | null,
-        initialData:
-          filters.city || filters.postTypeIds.length || filters.tagIds.length ||
-          filters.startDate || filters.endDate
-            ? undefined
-            : {
-                pages: [{ posts, nextCursor }],
-                pageParams: [null as Date | null],
-              },
-        staleTime: 1000 * 60,
-        getNextPageParam: (lastPage, _) => lastPage.nextCursor,
-      },
-      queryClient,
-    );
-
+    queryClient,
+  );
   const [animate] = useAutoAnimate();
 
   return (
@@ -101,16 +109,19 @@ export default function Feed({
         <ul ref={animate} className="flex flex-col gap-2">
           {data?.pages
             .flatMap((page) => page.posts)
-            .map((post) => (
-              <li key={post.id}>
-                <Post
-                  {...post}
-                  createdAt={String(post.createdAt)}
-                  updatedAt={String(post.updatedAt)}
-                  liked={!!post.liked}
-                />
-              </li>
-            ))}
+            .map((post) => {
+              const locale = getUser()?.locale;
+              return (
+                <li key={post.id}>
+                  <Post
+                    {...post}
+                    createdAt={new Date(post.createdAt).toLocaleString(locale)}
+                    updatedAt={new Date(post.updatedAt).toLocaleString(locale)}
+                    liked={!!post.liked}
+                  />
+                </li>
+              );
+            })}
         </ul>
       </div>
 
