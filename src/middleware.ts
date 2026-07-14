@@ -5,7 +5,12 @@ import type { APIContext } from "astro";
 import { db, eq, User } from "@/db";
 import { session } from "./userStore";
 
-const unprotectedPaths = new Set(["/login", "/register", "/sobre"]);
+const unprotectedPaths = new Set(["/login", "/register"]);
+
+// Public pages that still show the navbar and should reflect the
+// logged-in state when a session exists, but must never redirect to
+// /login when there isn't one.
+const optionalAuthPaths = new Set(["/sobre"]);
 
 const unprotectedActions = new Set(["createUserForm", "loginForm"]);
 
@@ -64,6 +69,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
   if (context.isPrerendered || unprotectedPaths.has(context.url.pathname))
     return next();
 
+  const isOptionalAuth = optionalAuthPaths.has(context.url.pathname);
+
   const { action } = getActionContext(context);
   if (action && unprotectedActions.has(action.name)) return next();
 
@@ -85,7 +92,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
     context.session?.get("user"),
   ]);
 
-  if (!userId) return redirect(context, isHtml.get);
+  if (!userId) {
+    if (isOptionalAuth) return next();
+    return redirect(context, isHtml.get);
+  }
 
   if (!user || !updatedAt) {
     const dbUser = await db.query.User.findFirst({
@@ -101,6 +111,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     if (!dbUser) {
       console.error("User not found in database. Destroying session.");
       context.session?.destroy();
+      if (isOptionalAuth) return next();
       return redirect(context, isHtml.get);
     }
 
@@ -124,6 +135,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   if (!user || !updatedAt) {
     context.session?.destroy();
+    if (isOptionalAuth) return next();
     return redirect(context, isHtml.get);
   }
 
