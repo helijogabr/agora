@@ -5,7 +5,7 @@ import type { APIContext } from "astro";
 import { db, eq, User } from "@/db";
 import { session } from "./userStore";
 
-const unprotectedPaths = new Set(["/login", "/register"]);
+const unprotectedPaths = new Set(["/login", "/register", "/sobre"]);
 
 const unprotectedActions = new Set(["createUserForm", "loginForm"]);
 

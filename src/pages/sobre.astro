@@ -1,0 +1,115 @@
+---
+import Logo from "@assets/agora.svg";
+import Layout from "@layouts/Layout.astro";
+import { Icon } from "astro-icon/components";
+
+const user = Astro.locals.user?.info;
+
+const categorias = [
+  {
+    nome: "Reclamação",
+    icon: "mdi:alert-circle",
+    descricao: "Relate um problema com um serviço ou espaço público.",
+  },
+  {
+    nome: "Sugestão",
+    icon: "mdi:lightbulb-on",
+    descricao: "Proponha melhorias para a sua cidade.",
+  },
+  {
+    nome: "Denúncia",
+    icon: "mdi:flag",
+    descricao: "Denuncie irregularidades para a prefeitura.",
+  },
+  {
+    nome: "Elogio",
+    icon: "mdi:thumb-up",
+    descricao: "Reconheça um serviço ou iniciativa bem feita.",
+  },
+  {
+    nome: "Dúvida",
+    icon: "mdi:help-circle",
+    descricao: "Tire dúvidas sobre serviços e processos municipais.",
+  },
+  {
+    nome: "Aviso/Comunicado",
+    icon: "mdi:bullhorn",
+    descricao: "Compartilhe avisos importantes com a comunidade.",
+  },
+];
+---
+
+<Layout title="Sobre" showNav={true}>
+  <main class="flex flex-1 flex-col items-center">
+    <div class="mx-auto flex w-full max-w-4xl flex-col items-center gap-8 px-4 py-8 md:py-16">
+      <div class="flex flex-col items-center gap-4 text-center">
+        <Logo class="h-16 w-auto fill-current text-[#1e4937] dark:text-[#50be91]" />
+        <h1 class="text-3xl font-bold text-[#1e4937] dark:text-[#50be91]">
+          Agora: Comunicação e solução para Cidades
+        </h1>
+        <p class="max-w-2xl text-lg">
+          Uma plataforma de comunicação e integração entre os cidadãos e a
+          prefeitura.
+        </p>
+      </div>
+
+      <div class="w-full rounded-3xl bg-[#d3d3d3] p-6 shadow-2xl md:p-8 dark:bg-gray-900">
+        <h2 class="mb-2 text-xl font-bold text-[#1e4937] dark:text-[#50be91]">
+          O que é o Agora?
+        </h2>
+        <p>
+          O Agora é um espaço onde qualquer cidadão pode publicar, acompanhar
+          e interagir com questões da própria cidade — de buracos na rua a
+          elogios a um serviço público. Cada publicação pode trazer uma
+          categoria, tags, um local e fotos, para que a prefeitura e outros
+          moradores entendam rapidamente do que se trata e onde acontece.
+        </p>
+      </div>
+
+      <div class="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+        {
+          categorias.map((categoria) => (
+            <div class="flex flex-col items-start gap-2 rounded-3xl bg-[#d3d3d3] p-4 shadow-2xl dark:bg-gray-900">
+              <Icon
+                name={categoria.icon}
+                class="h-8 w-8 text-[#50be91]"
+              />
+              <h3 class="font-bold text-[#1e4937] dark:text-[#50be91]">
+                {categoria.nome}
+              </h3>
+              <p class="text-sm">{categoria.descricao}</p>
+            </div>
+          ))
+        }
+      </div>
+
+      <div class="w-full rounded-3xl bg-[#d3d3d3] p-6 shadow-2xl md:p-8 dark:bg-gray-900">
+        <h2 class="mb-2 text-xl font-bold text-[#1e4937] dark:text-[#50be91]">
+          Como funciona
+        </h2>
+        <ul class="list-disc space-y-1 pl-5">
+          <li>Publique com título, descrição, categoria e tags.</li>
+          <li>
+            Informe o endereço do problema ou compartilhe sua localização
+            atual com um clique.
+          </li>
+          <li>
+            Veja as publicações em um mapa e em um feed ordenado por
+            proximidade.
+          </li>
+          <li>
+            Curta publicações relevantes para ajudar a priorizar o que
+            importa.
+          </li>
+        </ul>
+      </div>
+
+      <a
+        href={user ? "/" : "/register"}
+        class="flex h-15 w-56 cursor-pointer items-center justify-center rounded-4xl bg-[#50be91] text-center font-bold text-[#1e4937] transition hover:bg-[#50be90d3]"
+      >
+        {user ? "Ver o feed" : "Criar minha conta"}
+      </a>
+    </div>
+  </main>
+</Layout>
