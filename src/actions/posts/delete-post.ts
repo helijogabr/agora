@@ -1,7 +1,7 @@
 import { ActionError, defineAction } from "astro:actions";
 import { z } from "astro/zod";
 import { and, db, eq, Post } from "@/db";
-import { sleep } from "./action-delay";
+import { sleep } from "../action-delay";
 
 export const deletePost = defineAction({
   input: z.object({

@@ -1,6 +1,6 @@
 import { actions } from "astro:actions";
 import { type InfiniteData, useMutation } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Select, {
   type GroupBase,
   type Props as ReactSelectProps,
@@ -28,6 +28,9 @@ type NewPostMutationInput = {
   district?: string | undefined;
   street?: string | undefined;
   number?: string | undefined;
+  shareLocation: boolean;
+  latitude?: number | undefined;
+  longitude?: number | undefined;
   attachments: File[];
 };
 
@@ -129,6 +132,10 @@ export default function NewPost({ onPostCreated }: NewPostProps) {
           district: newPost.informAddress ? (newPost.district ?? null) : null,
           street: newPost.informAddress ? (newPost.street ?? null) : null,
           number: newPost.informAddress ? (newPost.number ?? null) : null,
+          latitude: newPost.shareLocation ? (newPost.latitude ?? null) : null,
+          longitude: newPost.shareLocation
+            ? (newPost.longitude ?? null)
+            : null,
           tags: selectedTags.map((tag) => tag.label),
           id: now.getTime(),
           likes: 0,
@@ -190,6 +197,9 @@ export default function NewPost({ onPostCreated }: NewPostProps) {
         setDistrict("");
         setStreet("");
         setNumber("");
+        setShareLocation(false);
+        setCoords(null);
+        setLocationError(null);
         onPostCreated?.();
       },
       onError: (_, _1, onMutateResult) => {
@@ -222,6 +232,55 @@ export default function NewPost({ onPostCreated }: NewPostProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [attachmentErrors, setAttachmentErrors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [shareLocation, setShareLocation] = useState(false);
+  const [coords, setCoords] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  // Default the checkbox to checked only when geolocation permission is
+  // already granted, so we never trigger a fresh permission prompt on mount.
+  useEffect(() => {
+    if (!navigator.permissions?.query) return;
+
+    let cancelled = false;
+
+    navigator.permissions
+      .query({ name: "geolocation" as PermissionName })
+      .then((status) => {
+        if (!cancelled && status.state === "granted") {
+          setShareLocation(true);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!shareLocation || coords || !navigator.geolocation) return;
+
+    setLocationError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCoords({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+      },
+      () => {
+        setLocationError(
+          "Não foi possível obter sua localização. Verifique as permissões do navegador.",
+        );
+        setShareLocation(false);
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 5 * 60 * 1000 },
+    );
+  }, [shareLocation, coords]);
 
   function updateSelectedFiles(files: File[]) {
     try {
@@ -258,12 +317,15 @@ export default function NewPost({ onPostCreated }: NewPostProps) {
             !street.trim() ||
             !number.trim());
 
+        const isLocationPending = shareLocation && !coords;
+
         if (
           isPending ||
           !postType ||
           !title.trim() ||
           !content.trim() ||
           hasInvalidAddress ||
+          isLocationPending ||
           attachmentErrors.length > 0
         )
           return;
@@ -278,6 +340,9 @@ export default function NewPost({ onPostCreated }: NewPostProps) {
           district: district.trim() || undefined,
           street: street.trim() || undefined,
           number: number.trim() || undefined,
+          shareLocation,
+          latitude: coords?.latitude,
+          longitude: coords?.longitude,
           attachments: selectedFiles,
         });
       }}
@@ -393,6 +458,52 @@ export default function NewPost({ onPostCreated }: NewPostProps) {
 
       <SectionHeader title="Local" />
 
+      <label className="flex w-full cursor-pointer items-center gap-2 text-sm font-medium text-gray-700 select-none dark:text-gray-200">
+        <span className="relative flex h-5 w-5 shrink-0 items-center justify-center">
+          <input
+            type="checkbox"
+            name="shareLocation"
+            disabled={isPending}
+            checked={shareLocation}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              setShareLocation(checked);
+              if (!checked) {
+                setCoords(null);
+                setLocationError(null);
+              }
+            }}
+            className="peer absolute inset-0 h-full w-full cursor-pointer appearance-none rounded-md border border-gray-300 bg-gray-50 transition-colors duration-200 checked:border-[#50be91] checked:bg-[#50be91] focus-visible:ring-2 focus-visible:ring-[#50be91] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:focus-visible:ring-offset-gray-900"
+          />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="pointer-events-none h-3.5 w-3.5 scale-50 text-[#1e4937] opacity-0 transition-all duration-200 ease-out peer-checked:scale-100 peer-checked:opacity-100"
+          >
+            <title>Selecionado</title>
+            <path d="M5 12l5 5L20 7" />
+          </svg>
+        </span>
+        Compartilhar minha localização atual
+      </label>
+
+      {shareLocation && !coords && !locationError && (
+        <p className="w-full text-sm text-gray-500 dark:text-gray-400">
+          Obtendo sua localização...
+        </p>
+      )}
+
+      {locationError && (
+        <p className="w-full text-sm text-red-700 dark:text-red-300">
+          {locationError}
+        </p>
+      )}
+
       <StyledSelect
         name="informAddress"
         isDisabled={isPending}
@@ -480,6 +591,7 @@ export default function NewPost({ onPostCreated }: NewPostProps) {
           !title.trim() ||
           !content.trim() ||
           attachmentErrors.length > 0 ||
+          (shareLocation && !coords) ||
           (informAddress &&
             (!zipCode.trim() ||
               !city.trim() ||
@@ -487,7 +599,7 @@ export default function NewPost({ onPostCreated }: NewPostProps) {
               !street.trim() ||
               !number.trim()))
         }
-        className={`w-fit cursor-pointer rounded bg-gray-300 px-2 py-1 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-700`}
+        className="h-12 w-fit cursor-pointer rounded-4xl bg-[#50be91] px-4 font-bold text-[#1e4937] transition hover:bg-[#50be90d3] disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isPending ? "Enviando..." : "Criar Postagem"}
       </button>
@@ -502,6 +614,7 @@ function createPostFormData(input: NewPostMutationInput): FormData {
   formData.set("content", input.content);
   formData.set("postType", String(input.postType));
   formData.set("informAddress", String(input.informAddress));
+  formData.set("shareLocation", String(input.shareLocation));
 
   for (const tagId of input.tagIds) {
     formData.append("tagIds", String(tagId));
@@ -513,6 +626,14 @@ function createPostFormData(input: NewPostMutationInput): FormData {
     if (value) {
       formData.set(field, value);
     }
+  }
+
+  if (input.latitude != null) {
+    formData.set("latitude", String(input.latitude));
+  }
+
+  if (input.longitude != null) {
+    formData.set("longitude", String(input.longitude));
   }
 
   for (const file of input.attachments) {

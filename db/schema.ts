@@ -3,6 +3,7 @@ import {
   index,
   integer,
   primaryKey,
+  real,
   sqliteTable,
   text,
 } from "drizzle-orm/sqlite-core";
@@ -43,6 +44,8 @@ export const Post = sqliteTable(
     district: text(),
     street: text(),
     number: text(),
+    latitude: real(),
+    longitude: real(),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .default(sql`(unixepoch())`),

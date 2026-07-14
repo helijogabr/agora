@@ -104,6 +104,7 @@ function baseCommand(attachments: IncomingAttachment[] = []) {
     postType: 1,
     tagIds: [1, 2],
     informAddress: false,
+    shareLocation: false,
     attachments,
   };
 }

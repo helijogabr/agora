@@ -5,6 +5,7 @@ import PostBar from "./PostBar";
 interface Props extends Omit<PostData, "createdAt" | "updatedAt"> {
   createdAt: string;
   updatedAt: string;
+  highlighted?: boolean;
 }
 
 function formatAddress({
@@ -141,10 +142,11 @@ export default function Post({
   content,
   title,
   images,
+  highlighted,
 }: Props) {
   return (
     <div
-      className={`w-full max-w-2xl rounded bg-gray-300 p-4 dark:bg-gray-800 ${ghost ? "opacity-50" : ""}`}
+      className={`w-full rounded bg-gray-300 p-4 transition dark:bg-gray-800 ${ghost ? "opacity-50" : ""} ${highlighted ? "ring-2 ring-[#50be91]" : ""}`}
     >
       <PostContent
         category={category}

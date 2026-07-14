@@ -1,7 +1,7 @@
 import { defineAction } from "astro:actions";
 import { z } from "astro/zod";
 import { and, count, db, eq, Likes } from "@/db";
-import { sleep } from "./action-delay";
+import { sleep } from "../action-delay";
 
 export const likePost = defineAction({
   input: z.object({

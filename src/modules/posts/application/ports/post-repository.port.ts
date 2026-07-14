@@ -4,6 +4,8 @@ export interface CreatePostAddressInput {
   district?: string | undefined;
   street?: string | undefined;
   number?: string | undefined;
+  latitude?: number | undefined;
+  longitude?: number | undefined;
 }
 
 export interface CreatePostAttachmentMetadata {
