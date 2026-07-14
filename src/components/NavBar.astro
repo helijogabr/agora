@@ -9,8 +9,9 @@ const user = Astro.locals.user?.info;
 
 // prettier-ignore
 const urls = user
-  ? {}
+  ? { "Sobre": "/sobre" }
   : {
+      "Sobre": "/sobre",
       "Entrar": "/login",
       "Registrar": "/register",
     };
