@@ -30,6 +30,9 @@ export interface CreatePostCommand {
   district?: string | undefined;
   street?: string | undefined;
   number?: string | undefined;
+  shareLocation: boolean;
+  latitude?: number | undefined;
+  longitude?: number | undefined;
   attachments: IncomingAttachment[];
 }
 
@@ -101,9 +104,14 @@ export class CreatePostService {
         });
       }
 
-      const location = command.informAddress
-        ? await this.geocodeCommandAddress(command)
-        : null;
+      const location =
+        command.shareLocation &&
+        command.latitude != null &&
+        command.longitude != null
+          ? { latitude: command.latitude, longitude: command.longitude }
+          : command.informAddress
+            ? await this.geocodeCommandAddress(command)
+            : null;
 
       return await this.postRepository.createPostWithAttachments({
         title: command.title,
@@ -111,17 +119,18 @@ export class CreatePostService {
         authorId: command.authorId,
         postType: command.postType,
         tagIds: command.tagIds,
-        address: command.informAddress
-          ? {
-              zipCode: command.zipCode,
-              city: command.city,
-              district: command.district,
-              street: command.street,
-              number: command.number,
-              latitude: location?.latitude,
-              longitude: location?.longitude,
-            }
-          : undefined,
+        address:
+          command.informAddress || command.shareLocation
+            ? {
+                zipCode: command.zipCode,
+                city: command.city,
+                district: command.district,
+                street: command.street,
+                number: command.number,
+                latitude: location?.latitude,
+                longitude: location?.longitude,
+              }
+            : undefined,
         attachments: storedAttachments,
       });
     } catch (error) {

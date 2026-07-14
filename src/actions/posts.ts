@@ -291,27 +291,42 @@ export const createPost = defineAction({
       district: z.string().trim().optional(),
       street: z.string().trim().optional(),
       number: z.string().trim().optional(),
+      shareLocation: z.boolean().default(false),
+      latitude: z.number().min(-90).max(90).optional(),
+      longitude: z.number().min(-180).max(180).optional(),
       attachments: z.array(z.instanceof(File)).default([]),
     })
     .superRefine((value, ctx) => {
-      if (!value.informAddress) return;
+      if (value.informAddress) {
+        const requiredFields = [
+          ["zipCode", value.zipCode],
+          ["city", value.city],
+          ["district", value.district],
+          ["street", value.street],
+          ["number", value.number],
+        ] as const;
 
-      const requiredFields = [
-        ["zipCode", value.zipCode],
-        ["city", value.city],
-        ["district", value.district],
-        ["street", value.street],
-        ["number", value.number],
-      ] as const;
-
-      for (const [field, fieldValue] of requiredFields) {
-        if (!fieldValue?.trim()) {
-          ctx.addIssue({
-            code: "custom",
-            path: [field],
-            message: "Campo obrigatório quando endereço for informado.",
-          });
+        for (const [field, fieldValue] of requiredFields) {
+          if (!fieldValue?.trim()) {
+            ctx.addIssue({
+              code: "custom",
+              path: [field],
+              message: "Campo obrigatório quando endereço for informado.",
+            });
+          }
         }
+      }
+
+      if (
+        value.shareLocation &&
+        (value.latitude === undefined || value.longitude === undefined)
+      ) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["shareLocation"],
+          message:
+            "Coordenadas obrigatórias quando a localização for compartilhada.",
+        });
       }
     }),
   handler: async (input, { locals }) => {
@@ -346,6 +361,9 @@ export const createPost = defineAction({
         district: input.district,
         street: input.street,
         number: input.number,
+        shareLocation: input.shareLocation,
+        latitude: input.latitude,
+        longitude: input.longitude,
         attachments,
       });
     } catch (error) {
