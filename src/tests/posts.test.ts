@@ -275,6 +275,48 @@ describe("posts.ts actions", () => {
   });
 
   describe("createPost", () => {
+    const schema = (
+      createPost as unknown as {
+        input: { safeParse: (data: unknown) => { success: boolean } };
+      }
+    ).input;
+
+    it("Valor Limite: deve aprovar strings de title e content com tamanho mínimo exato de 1 caractere", () => {
+      const result = schema.safeParse({
+        title: "A",
+        content: "B",
+        postType: 1,
+      });
+
+      expect(result.success).toBe(true);
+    });
+
+    it("Valor Limite: deve reprovar strings de title e content com tamanho 0 (vazio)", () => {
+      const resultEmptyTitle = schema.safeParse({
+        title: "",
+        content: "B",
+        postType: 1,
+      });
+
+      const resultEmptyContent = schema.safeParse({
+        title: "A",
+        content: "",
+        postType: 1,
+      });
+
+      expect(resultEmptyTitle.success).toBe(false);
+      expect(resultEmptyContent.success).toBe(false);
+    });
+
+    it("deve reprovar a entrada quando postType não for informado", () => {
+      const result = schema.safeParse({
+        title: "Post sem categoria",
+        content: "Conteudo",
+      });
+
+      expect(result.success).toBe(false);
+    });
+
     it("deve criar um post com sucesso e retornar o ID", async () => {
       mockQueryBuilder.__resolveValue = { lastInsertRowid: 42 };
 
@@ -303,20 +345,6 @@ describe("posts.ts actions", () => {
       });
     });
 
-    it("deve reprovar a entrada quando postType não for informado", () => {
-      const schema = (
-        createPost as unknown as {
-          input: { safeParse: (data: unknown) => { success: boolean } };
-        }
-      ).input;
-
-      const result = schema.safeParse({
-        title: "Post sem categoria",
-        content: "Conteudo",
-      });
-
-      expect(result.success).toBe(false);
-    });
   });
 
   describe("deletePost", () => {

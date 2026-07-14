@@ -64,6 +64,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
     "@biomejs/biome": "2.4.10",
+    "@testing-library/react": "^16.3.2",
     "@types/bcrypt": "^6.0.0",
     "@types/ioredis-mock": "^8.2.7",
     "@types/leaflet": "^1.9.21",
@@ -75,6 +76,7 @@
     "drizzle-kit": "^0.31.10",
     "drizzle-seed": "^0.3.1",
     "ioredis-mock": "^8.13.1",
+    "jsdom": "^29.1.1",
     "prettier": "3.8.1",
     "prettier-plugin-astro": "0.14.1",
     "prettier-plugin-tailwindcss": "0.7.2",
