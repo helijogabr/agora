@@ -24,6 +24,8 @@ export class AstroDbPostRepository implements PostRepositoryPort {
         district: input.address?.district,
         street: input.address?.street,
         number: input.address?.number,
+        latitude: input.address?.latitude,
+        longitude: input.address?.longitude,
         createdAt,
         updatedAt: createdAt,
       });

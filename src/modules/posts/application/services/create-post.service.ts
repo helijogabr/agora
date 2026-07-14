@@ -5,6 +5,7 @@ import {
   validateAttachmentDescriptors,
 } from "../../domain/attachment-policy";
 import { PostPersistenceError } from "../../domain/post-errors";
+import type { GeocoderPort } from "../ports/geocoder.port";
 import type {
   CreatePostRepositoryResult,
   PostRepositoryPort,
@@ -35,6 +36,7 @@ export interface CreatePostCommand {
 interface CreatePostServiceOptions {
   createObjectStorage: () => ObjectStoragePort;
   storageProvider: string;
+  geocoder?: GeocoderPort | undefined;
   generateId?: () => string;
   logger?: Pick<Console, "error">;
 }
@@ -42,6 +44,7 @@ interface CreatePostServiceOptions {
 export class CreatePostService {
   private readonly createObjectStorage: () => ObjectStoragePort;
   private readonly storageProvider: string;
+  private readonly geocoder: GeocoderPort | undefined;
   private readonly generateId: () => string;
   private readonly logger: Pick<Console, "error">;
 
@@ -51,6 +54,7 @@ export class CreatePostService {
   ) {
     this.createObjectStorage = options.createObjectStorage;
     this.storageProvider = options.storageProvider;
+    this.geocoder = options.geocoder;
     this.generateId = options.generateId ?? (() => crypto.randomUUID());
     this.logger = options.logger ?? console;
   }
@@ -97,6 +101,10 @@ export class CreatePostService {
         });
       }
 
+      const location = command.informAddress
+        ? await this.geocodeCommandAddress(command)
+        : null;
+
       return await this.postRepository.createPostWithAttachments({
         title: command.title,
         content: command.content,
@@ -110,6 +118,8 @@ export class CreatePostService {
               district: command.district,
               street: command.street,
               number: command.number,
+              latitude: location?.latitude,
+              longitude: location?.longitude,
             }
           : undefined,
         attachments: storedAttachments,
@@ -121,6 +131,22 @@ export class CreatePostService {
 
       throw error;
     }
+  }
+
+  private async geocodeCommandAddress(command: CreatePostCommand) {
+    if (!this.geocoder) return null;
+
+    const addressLine = [
+      [command.street, command.number].filter(Boolean).join(", "),
+      command.district,
+      command.city,
+      command.zipCode,
+      "Brasil",
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    return this.geocoder.geocodeAddress(addressLine);
   }
 
   private validateAttachmentBytes(attachments: IncomingAttachment[]): void {

@@ -5,7 +5,7 @@ const theme = Astro.cookies.get("theme")?.value ?? "light";
 <button
   is="theme-toggle"
   type="button"
-  class="cursor-pointer rounded bg-gray-400 px-3 py-2 dark:bg-gray-800"
+  class="cursor-pointer rounded-4xl bg-[#50be91] px-4 py-2 font-bold text-[#1e4937] transition hover:bg-[#50be90d3]"
 >
   {theme === "light" ? "Claro" : "Escuro"}
 </button>

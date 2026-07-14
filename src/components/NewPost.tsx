@@ -129,6 +129,8 @@ export default function NewPost({ onPostCreated }: NewPostProps) {
           district: newPost.informAddress ? (newPost.district ?? null) : null,
           street: newPost.informAddress ? (newPost.street ?? null) : null,
           number: newPost.informAddress ? (newPost.number ?? null) : null,
+          latitude: null,
+          longitude: null,
           tags: selectedTags.map((tag) => tag.label),
           id: now.getTime(),
           likes: 0,
@@ -487,7 +489,7 @@ export default function NewPost({ onPostCreated }: NewPostProps) {
               !street.trim() ||
               !number.trim()))
         }
-        className={`w-fit cursor-pointer rounded bg-gray-300 px-2 py-1 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-700`}
+        className="h-12 w-fit cursor-pointer rounded-4xl bg-[#50be91] px-4 font-bold text-[#1e4937] transition hover:bg-[#50be90d3] disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isPending ? "Enviando..." : "Criar Postagem"}
       </button>

@@ -1,4 +1,5 @@
 ---
+import Logo from "@assets/agora.svg";
 import { Icon } from "astro-icon/components";
 import LogoutButton from "./LogoutButton.astro";
 import ThemeToggle from "./ThemeToggle.astro";
@@ -8,9 +9,7 @@ const user = Astro.locals.user?.info;
 
 // prettier-ignore
 const urls = user
-  ? {
-      "Página Inicial": "/",
-    }
+  ? {}
   : {
       "Entrar": "/login",
       "Registrar": "/register",
@@ -18,37 +17,48 @@ const urls = user
 ---
 
 <nav
-  class="m-0 flex items-center justify-between bg-gray-400 p-4 dark:bg-gray-800"
+  class="m-0 flex items-center justify-between border-b border-gray-300 bg-gray-200/90 px-6 py-5 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-950/90"
   transition:name="nav"
 >
-  <ul class="m-0 flex gap-4">
-    {
-      Object.entries(urls).map(([name, url]) => (
-        <li>
-          {url === current ? (
-            <span class="cursor-default rounded bg-gray-300 px-2 py-1 dark:bg-gray-700">
-              {name}
-            </span>
-          ) : (
-            <a
-              href={url}
-              class="rounded px-2 py-1 hover:bg-gray-300 dark:hover:bg-gray-700"
-              data-astro-prefetch="load"
-            >
-              {name}
-            </a>
-          )}
-        </li>
-      ))
-    }
-  </ul>
+  <div class="flex items-center gap-8">
+    <a
+      href="/"
+      class="flex items-center rounded transition hover:opacity-80"
+      aria-label="Página inicial"
+      data-astro-prefetch="load"
+    >
+      <Logo class="h-10 w-auto fill-current text-[#1e4937] dark:text-[#50be91]" />
+    </a>
+
+    <ul class="m-0 flex gap-2">
+      {
+        Object.entries(urls).map(([name, url]) => (
+          <li>
+            {url === current ? (
+              <span class="cursor-default rounded-4xl bg-[#50be91] px-4 py-2 font-bold text-[#1e4937]">
+                {name}
+              </span>
+            ) : (
+              <a
+                href={url}
+                class="rounded-4xl px-4 py-2 font-bold text-[#1e4937] transition hover:bg-[#b3b3b362] dark:text-gray-400 dark:hover:bg-gray-800"
+                data-astro-prefetch="load"
+              >
+                {name}
+              </a>
+            )}
+          </li>
+        ))
+      }
+    </ul>
+  </div>
 
   <div class="flex items-center gap-4">
     {
       user?.name ? (
         <div class="flex items-center gap-4">
           <div class="flex cursor-default items-center gap-2">
-            <Icon name="mdi:account" />
+            <Icon name="mdi:account" class="text-[#50be91]" />
             <span>
               Logado como <strong>{user.name}</strong>
             </span>
@@ -58,7 +68,7 @@ const urls = user
       ) : (
         <a
           href="/login"
-          class="rounded px-2 py-1 hover:bg-gray-300 dark:hover:bg-gray-700"
+          class="rounded-4xl px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-800"
           data-astro-prefetch="load"
         >
           Você não está logado

@@ -52,7 +52,7 @@ function ToggleButton({
       type="button"
       className={`rounded-full border px-3 py-1 text-sm font-medium transition ${
         active
-          ? "border-sky-600 bg-sky-600 text-white"
+          ? "border-[#50be91] bg-[#50be91] text-[#1e4937]"
           : "border-gray-400 bg-white text-gray-700 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-200"
       }`}
       onClick={onToggle}
@@ -110,7 +110,7 @@ export default function FeedFilters({
   };
 
   return (
-    <div className="w-full max-w-2xl rounded border border-gray-300 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+    <div className="w-full rounded-xl border border-gray-300 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <button
         type="button"
         className="flex w-full items-center justify-between rounded bg-gray-100 px-3 py-2 text-left text-sm font-semibold text-gray-700 dark:bg-gray-800 dark:text-gray-200"
@@ -167,7 +167,7 @@ export default function FeedFilters({
                         type="button"
                         className={`rounded-full border px-2.5 py-1 text-sm ${
                           isSelected
-                            ? "border-sky-600 bg-sky-600 text-white"
+                            ? "border-[#50be91] bg-[#50be91] text-[#1e4937]"
                             : "border-gray-300 bg-gray-50 text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
                         }`}
                         onClick={() =>
@@ -206,7 +206,7 @@ export default function FeedFilters({
                         type="button"
                         className={`rounded-full border px-2.5 py-1 text-sm ${
                           isSelected
-                            ? "border-sky-600 bg-sky-600 text-white"
+                            ? "border-[#50be91] bg-[#50be91] text-[#1e4937]"
                             : "border-gray-300 bg-gray-50 text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
                         }`}
                         onClick={() => toggleSelection(tag.id, selectedTagIds, setSelectedTagIds)}
@@ -265,7 +265,7 @@ export default function FeedFilters({
             <button
               type="button"
               onClick={handleApply}
-              className="rounded bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700"
+              className="cursor-pointer rounded-4xl bg-[#50be91] px-4 py-2 text-sm font-bold text-[#1e4937] transition hover:bg-[#50be90d3]"
             >
               Aplicar filtros
             </button>

@@ -38,8 +38,9 @@ Os comandos anteriores são suficientes para executar um servidor de desenvolvim
 Para credenciais, variáveis de ambiente são utilizadas. Localmente, um arquivo `.env` deve ser criado na raiz do projeto, com as seguintes variáveis:
 
 ```env
-ASTRO_DB_REMOTE_URL=[...url]
-ASTRO_DB_APP_TOKEN=[...token]
+DATABASE_URL=[...url]
+DATABASE_TOKEN=[...token]
+REDIS_URL=[...url]
 ```
 
 ### Imagens em publicações

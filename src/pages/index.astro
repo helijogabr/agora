@@ -1,9 +1,7 @@
 ---
 import { actions } from "astro:actions";
-import Feed from "@components/Feed";
-import LateralMenu from "@components/LateralMenu";
+import HomeLayout from "@components/HomeLayout";
 import Layout from "@layouts/Layout.astro";
-
 
 const { data: posts, error } = await Astro.callAction(actions.getPosts, {
   limit: 2,
@@ -11,14 +9,10 @@ const { data: posts, error } = await Astro.callAction(actions.getPosts, {
 ---
 
 <Layout title="Feed" showNav={true}>
-  <div class="flex flex-col items-center gap-4 py-8">
-    <h1 class="text-2xl font-bold">Ágora</h1>
-
-    <div class="w-full max-w-lg">
-      <LateralMenu client:load />
+  <main class="flex flex-1 flex-col items-center">
+    <div class="mx-auto flex w-full max-w-7xl flex-col items-center gap-4 px-4 py-8 md:py-16">
+      {error && <p class="error">{error.message}</p>}
+      {posts && <HomeLayout {...posts} client:idle />}
     </div>
-
-    {error && <p class="error">{error.message}</p>}
-    {posts && <Feed {...posts} client:idle />}
-  </div>
+  </main>
 </Layout>

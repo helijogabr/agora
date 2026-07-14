@@ -1,6 +1,20 @@
 import { ActionError, defineAction } from "astro:actions";
 import { z } from "astro/zod";
-import { and, count, db, eq, exists, gte, inArray, Likes, lte, Post, PostTag, sql } from "@/db";
+import {
+  and,
+  count,
+  db,
+  eq,
+  exists,
+  gte,
+  inArray,
+  isNotNull,
+  Likes,
+  lte,
+  Post,
+  PostTag,
+  sql,
+} from "@/db";
 import { validateAttachmentDescriptors } from "@/modules/posts/domain/attachment-policy";
 import {
   AttachmentValidationError,
@@ -15,6 +29,21 @@ import {
 async function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+const POST_DETAIL_COLUMNS = {
+  id: true,
+  title: true,
+  content: true,
+  createdAt: true,
+  updatedAt: true,
+  zipCode: true,
+  city: true,
+  district: true,
+  street: true,
+  number: true,
+  latitude: true,
+  longitude: true,
+} as const;
 
 export const getPosts = defineAction({
   input: z.object({
@@ -41,18 +70,7 @@ export const getPosts = defineAction({
     const user = locals.user;
 
     const posts = await db.query.Post.findMany({
-      columns: {
-        id: true,
-        title: true,
-        content: true,
-        createdAt: true,
-        updatedAt: true,
-        zipCode: true,
-        city: true,
-        district: true,
-        street: true,
-        number: true,
-      },
+      columns: POST_DETAIL_COLUMNS,
       where: (posts, { and: andCond, lt }) => {
         const conditions = [];
 
@@ -144,8 +162,8 @@ export const getPosts = defineAction({
     const last = posts.at(-1);
     const nextCursor = extra && last?.updatedAt;
 
-    const formattedPosts = posts.map(
-      ({ attachments, type, ...post }) => ({
+    return {
+      posts: posts.map(({ attachments, type, ...post }) => ({
         ...post,
         author: post.author.name,
         category: type?.name,
@@ -154,13 +172,108 @@ export const getPosts = defineAction({
           ...img,
           src: `/api/post-images/${img.id}`,
         })),
-      }),
-    );
-
-    return {
-      posts: formattedPosts,
+      })),
       nextCursor,
     };
+  },
+});
+
+export const getPost = defineAction({
+  input: z.object({
+    postId: z.number().int().positive(),
+  }),
+  handler: async ({ postId }, { locals }) => {
+    const user = locals.user;
+
+    const post = await db.query.Post.findFirst({
+      columns: POST_DETAIL_COLUMNS,
+      where: (posts, { eq }) => eq(posts.id, postId),
+      with: {
+        author: {
+          columns: { name: true },
+        },
+        type: {
+          columns: { name: true },
+        },
+        tags: {
+          columns: {},
+          with: {
+            tag: {
+              columns: { name: true, id: true },
+            },
+          },
+        },
+        attachments: {
+          where: (attachments, { like }) =>
+            like(attachments.contentType, "image/%"),
+          columns: {
+            id: true,
+            originalName: true,
+            contentType: true,
+            sizeBytes: true,
+          },
+        },
+      },
+      extras: (table, { sql }) => ({
+        likes:
+          sql<number>`(SELECT COUNT(*) FROM ${Likes} WHERE ${Likes.postId} = ${table.id})`.as(
+            "likes",
+          ),
+        liked: exists(
+          db
+            .select({ n: sql`1` })
+            .from(Likes)
+            .where(and(eq(Likes.userId, user.id), eq(Likes.postId, table.id))),
+        )
+          .mapWith((exists) => Boolean(+exists))
+          .as("liked"),
+      }),
+    });
+
+    if (!post) {
+      throw new ActionError({
+        code: "NOT_FOUND",
+        message: "Post not found.",
+      });
+    }
+
+    const { attachments, type, ...rest } = post;
+
+    return {
+      post: {
+        ...rest,
+        author: rest.author.name,
+        category: type?.name,
+        tags: rest.tags.map((tag) => tag.tag.name),
+        images: attachments.map((img) => ({
+          ...img,
+          src: `/api/post-images/${img.id}`,
+        })),
+      },
+    };
+  },
+});
+
+const POST_LOCATIONS_LIMIT = 500;
+
+export const getPostLocations = defineAction({
+  input: z.void(),
+  handler: async () => {
+    const locations = await db.query.Post.findMany({
+      columns: {
+        id: true,
+        title: true,
+        city: true,
+        latitude: true,
+        longitude: true,
+      },
+      where: (posts, { and: andCond }) =>
+        andCond(isNotNull(posts.latitude), isNotNull(posts.longitude)),
+      orderBy: (posts, { desc }) => [desc(posts.updatedAt)],
+      limit: POST_LOCATIONS_LIMIT,
+    });
+
+    return { locations };
   },
 });
 
